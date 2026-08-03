@@ -1,0 +1,13 @@
+@import "tailwindcss";
+@import "./tokens.css";
+@import "./site.css";
+
+@theme inline {
+  --color-ink: var(--ink);
+  --color-cream: var(--cream);
+  --color-paper: var(--paper);
+  --color-bronze: var(--bronze);
+  --color-sage: var(--sage);
+  --font-sans: var(--font-manrope), Manrope, sans-serif;
+  --font-display: var(--font-playfair), "Playfair Display", serif;
+}
