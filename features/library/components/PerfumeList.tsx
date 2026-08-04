@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { TextLink } from "@/shared/ui";
 import type { PerfumeListItem } from "../lib/types";
 
@@ -23,14 +24,14 @@ export function PerfumeList({ items }: PerfumeListProps) {
     <ul className="library-list">
       {items.map((item) => (
         <li key={item.id}>
-          <a className="library-list-item" href={`/perfume/${item.slug}`}>
+          <Link className="library-list-item" href={`/perfume/${item.slug}`}>
             <span className="library-list-name">{item.displayName}</span>
             <span className="library-list-meta">
               {[item.commercialConcentrationLabel, item.commercialStatusLabel]
                 .filter(Boolean)
                 .join(" · ")}
             </span>
-          </a>
+          </Link>
         </li>
       ))}
     </ul>
