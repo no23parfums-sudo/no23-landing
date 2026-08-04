@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import type { FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { SectionLabel } from "@/shared/ui";
 
 export function NewsletterSection() {
@@ -30,14 +29,25 @@ export function NewsletterSection() {
         data-newsletter-form
         onSubmit={handleSubmit}
       >
+        <label className="sr-only" htmlFor="newsletter-email">
+          Correo electrónico
+        </label>
         <input
+          id="newsletter-email"
           name="email"
           type="email"
           placeholder="Tu correo electrónico"
           required
+          autoComplete="email"
         />
         <button type="submit">Sumarme</button>
-        <p className="form-message" data-form-message>
+        <p
+          className="form-message"
+          data-form-message
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
           {message}
         </p>
       </form>

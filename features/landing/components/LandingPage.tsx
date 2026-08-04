@@ -1,4 +1,11 @@
-import { SiteShell } from "@/shared/layout";
+import {
+  AnnouncementBar,
+  ChromeStateProvider,
+  MobileMenu,
+  SearchOverlay,
+  SiteFooter,
+  SiteHeader,
+} from "@/shared/layout";
 import { CollectionSection } from "./CollectionSection";
 import { DiscoverySection } from "./DiscoverySection";
 import { ExploreSection } from "./ExploreSection";
@@ -10,7 +17,10 @@ import { PassportSection } from "./PassportSection";
 
 export function LandingPage() {
   return (
-    <SiteShell>
+    <ChromeStateProvider>
+      <AnnouncementBar />
+      <SiteHeader />
+      <MobileMenu />
       <main>
         <HeroSection />
         <ManifestoSection />
@@ -21,6 +31,8 @@ export function LandingPage() {
         <KitsSection />
         <NewsletterSection />
       </main>
-    </SiteShell>
+      <SiteFooter />
+      <SearchOverlay />
+    </ChromeStateProvider>
   );
 }

@@ -1,4 +1,4 @@
-export { SiteShell } from "./SiteShell";
+export { ChromeStateProvider } from "./ChromeState";
 export { AnnouncementBar } from "./AnnouncementBar";
 export { SiteHeader } from "./SiteHeader";
 export { MobileMenu } from "./MobileMenu";
