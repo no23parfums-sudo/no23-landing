@@ -1,5 +1,5 @@
 {
   "version": "1",
-  "description": "ODD-aligned pilot perfume seeds. Add documents as NO.23 confirms each pilot slot.",
-  "documents": []
+  "description": "ODD-aligned pilot perfume seeds. Apply migrations and run seed only after NO.23 confirmation.",
+  "documents": ["pilot_perfume_1.json"]
 }

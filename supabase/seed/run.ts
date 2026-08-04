@@ -137,9 +137,7 @@ async function main() {
   );
 
   if (manifest.documents.length === 0) {
-    console.log(
-      "Seed manifest has no documents. Nothing to load (expected for Milestone 1).",
-    );
+    console.log("Seed manifest has no documents. Nothing to load.");
     return;
   }
 

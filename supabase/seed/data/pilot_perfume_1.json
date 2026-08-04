@@ -1,0 +1,53 @@
+{
+  "pilot_slot": "PILOT_PERFUME_1",
+  "_odd_source": "docs/library/odd-v1.1 — sheet 03_Piloto_BDC_EDP",
+  "_notes": {
+    "populated_from_pilot": [
+      "official_name",
+      "display_name",
+      "commercial_status (Activo → active)",
+      "commercial_concentration_label (from pilot concentration: Eau de Parfum)",
+      "ensure_brand / ensure_line / ensure_concentration stubs (ODD labels Chanel / Bleu de Chanel / Eau de Parfum; stub tables are id-only)"
+    ],
+    "required_system_fields_not_on_pilot_sheet": {
+      "slug": "ODD Sistema field; derived from official_name per slug rules (matches dictionary example)",
+      "verification_status": "unverified — pilot enrichment incomplete; ODD catalog No verificado",
+      "completeness_level": "minimum — calculated from present identity fields only (ODD Calculado)"
+    },
+    "left_null_pending_odd": [
+      "launch_year",
+      "universe",
+      "private_collection_id",
+      "declared_gender",
+      "summary",
+      "official_description",
+      "no23_editorial",
+      "perfumer_links",
+      "collection_links"
+    ]
+  },
+  "ids": {
+    "brand_id": "a1000001-0001-4000-8000-000000000001",
+    "line_id": "a1000001-0001-4000-8000-000000000002",
+    "concentration_id": "a1000001-0001-4000-8000-000000000003",
+    "perfume_id": "a1000001-0001-4000-8000-000000000010"
+  },
+  "ensure_brand": true,
+  "ensure_line": true,
+  "ensure_concentration": true,
+  "perfume": {
+    "official_name": "Bleu de Chanel Eau de Parfum",
+    "display_name": "Bleu de Chanel EDP",
+    "slug": "bleu-de-chanel-eau-de-parfum",
+    "commercial_status": "active",
+    "verification_status": "unverified",
+    "completeness_level": "minimum",
+    "commercial_concentration_label": "Eau de Parfum",
+    "launch_year": null,
+    "universe": null,
+    "declared_gender": null,
+    "summary": null,
+    "official_description": null,
+    "no23_editorial": null
+  }
+}

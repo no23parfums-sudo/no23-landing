@@ -1,16 +1,16 @@
 {
-  "pilot_slot": "PILOT_PERFUME_1",
-  "_comment": "Template only — not registered in manifest.json until Milestone seed. Replace values from ODD 03_Piloto_BDC_EDP when seeding is approved.",
+  "pilot_slot": "PILOT_PERFUME_N",
+  "_comment": "Template only — copy to a new JSON file and register in manifest.json when a pilot slot is confirmed.",
   "ensure_brand": true,
   "ensure_line": true,
   "ensure_concentration": true,
   "perfume": {
-    "official_name": "Bleu de Chanel Eau de Parfum",
-    "display_name": "Bleu de Chanel EDP",
-    "slug": "bleu-de-chanel-eau-de-parfum",
+    "official_name": "",
+    "display_name": "",
+    "slug": "",
     "commercial_status": "active",
     "verification_status": "unverified",
     "completeness_level": "minimum",
-    "commercial_concentration_label": "Eau de Parfum"
+    "commercial_concentration_label": null
   }
 }
