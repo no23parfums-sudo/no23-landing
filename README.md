@@ -1,21 +1,32 @@
-# NO.23 Landing V1
+# NO.23
 
-Landing estática y responsive lista para publicar.
+Perfume discovery, collection & identity platform.
 
-## Verla
-Abrí `index.html` en Chrome.
+## Stack
 
-## Publicarla en Vercel
-1. Crear un repositorio de GitHub.
-2. Subir estos archivos.
-3. En Vercel: Add New > Project > importar el repositorio.
-4. Framework preset: Other.
-5. Publicar.
-6. Settings > Domains > Add Domain > `no23.com.ar`.
-7. Copiar en el proveedor del dominio los registros DNS que indique Vercel.
+- Next.js (App Router)
+- React + TypeScript
+- Tailwind CSS
 
-## Pendientes
-- Reemplazar formulario simulado por Brevo/Mailchimp/Supabase.
-- Incorporar logo final SVG y hex exactos del branding.
-- Conectar páginas y cuenta real.
-- Agregar legales y Analytics.
+## Develop
+
+```bash
+npm install
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+## Architecture
+
+Feature-based layout:
+
+- `app/` — routing shell
+- `features/` — domain modules (`landing` today; others added later)
+- `shared/` — cross-feature UI, layout, hooks, lib
+- `styles/` — global tokens and site CSS
+- `legacy/` — original static landing (reference for pixel parity)
+
+## Deploy
+
+Vercel. Framework preset: Next.js. Domain: `no23.com.ar`.

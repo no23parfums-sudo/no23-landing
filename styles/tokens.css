@@ -1,0 +1,9 @@
+:root {
+  --ink: #171716;
+  --cream: #eee8dc;
+  --paper: #f6f2e9;
+  --bronze: #8d765f;
+  --sage: #858a78;
+  --line: rgba(23, 23, 22, 0.18);
+  --pad: clamp(20px, 4vw, 68px);
+}
