@@ -1,6 +1,32 @@
+import type { ReactNode } from "react";
+import Link from "next/link";
 import { NAV_LINKS } from "@/shared/lib/nav";
 import { MenuButton } from "./MenuButton";
 import { SearchButton } from "./SearchButton";
+
+function NavAnchor({
+  href,
+  children,
+  className,
+}: {
+  href: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  if (href.startsWith("/") && !href.startsWith("//")) {
+    return (
+      <Link className={className} href={href}>
+        {children}
+      </Link>
+    );
+  }
+
+  return (
+    <a className={className} href={href}>
+      {children}
+    </a>
+  );
+}
 
 export function SiteHeader() {
   return (
@@ -11,9 +37,9 @@ export function SiteHeader() {
       </a>
       <nav className="desktop-nav" aria-label="Principal">
         {NAV_LINKS.map((link) => (
-          <a key={link.href} href={link.href}>
+          <NavAnchor key={link.href} href={link.href}>
             {link.label}
-          </a>
+          </NavAnchor>
         ))}
       </nav>
       <div className="header-actions">

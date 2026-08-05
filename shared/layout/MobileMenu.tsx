@@ -1,8 +1,33 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
+import Link from "next/link";
 import { NAV_LINKS } from "@/shared/lib/nav";
 import { useChromeState } from "./ChromeState";
+
+function NavAnchor({
+  href,
+  children,
+  onClick,
+}: {
+  href: string;
+  children: ReactNode;
+  onClick?: () => void;
+}) {
+  if (href.startsWith("/") && !href.startsWith("//")) {
+    return (
+      <Link href={href} onClick={onClick}>
+        {children}
+      </Link>
+    );
+  }
+
+  return (
+    <a href={href} onClick={onClick}>
+      {children}
+    </a>
+  );
+}
 
 export function MobileMenu() {
   const { menuOpen, closeMenu, menuTriggerRef } = useChromeState();
@@ -48,9 +73,9 @@ export function MobileMenu() {
       inert={!menuOpen}
     >
       {NAV_LINKS.map((link) => (
-        <a key={link.href} href={link.href} onClick={closeMenu}>
+        <NavAnchor key={link.href} href={link.href} onClick={closeMenu}>
           {link.label}
-        </a>
+        </NavAnchor>
       ))}
     </nav>
   );

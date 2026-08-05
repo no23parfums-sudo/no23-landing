@@ -11,7 +11,7 @@ export function ExploreSection() {
           Casas, perfumistas, notas, familias y fragancias. Todo conectado para
           que una búsqueda se convierta en muchas nuevas puertas.
         </p>
-        <TextLink href="#newsletter" className="dark-link">
+        <TextLink href="/biblioteca" className="dark-link">
           Explorar la biblioteca ↗
         </TextLink>
       </div>
