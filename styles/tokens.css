@@ -6,4 +6,6 @@
   --sage: #858a78;
   --line: rgba(23, 23, 22, 0.18);
   --pad: clamp(20px, 4vw, 68px);
+  --font-manrope: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-playfair: "Playfair Display", ui-serif, Georgia, serif;
 }

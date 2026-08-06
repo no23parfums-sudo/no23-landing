@@ -1,6 +1,9 @@
 @import "tailwindcss";
 @import "./tokens.css";
+@import "./atmosphere.css";
 @import "./site.css";
+@import "./perfume-hero.css";
+@import "./perfume-document.css";
 
 @theme inline {
   --color-ink: var(--ink);

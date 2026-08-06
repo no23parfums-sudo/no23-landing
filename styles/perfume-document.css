@@ -1,0 +1,822 @@
+/* —— Permanent fragrance template: archival document (art direction) —— */
+
+.perfume-document {
+  position: relative;
+  z-index: 5;
+  background: var(--atm-document);
+  color: var(--ink);
+  margin-top: -16vh;
+  /* Tight handoff: ivory emerges into plates, not an empty title field */
+  padding: 3.5vh 0 140px;
+  box-shadow: 0 -40px 100px rgba(0, 0, 0, 0.2);
+}
+
+.perfume-document__sheet {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 var(--pad);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(88px, 12vw, 152px);
+}
+
+/* Opening movement: plates lead the document */
+.perfume-document__sheet > .olfactive-identity {
+  padding-top: 0;
+  padding-bottom: clamp(8px, 2vw, 24px);
+}
+
+.perfume-document__sheet > .signature-character {
+  max-width: 40rem;
+}
+
+.perfume-document__sheet > .performance-section {
+  padding-top: clamp(8px, 2vw, 20px);
+}
+
+.archive-section__heading {
+  max-width: 36rem;
+  margin-bottom: clamp(36px, 5vw, 56px);
+}
+
+.archive-section__eyebrow {
+  display: block;
+  margin-bottom: 1rem;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: rgba(23, 23, 22, 0.42);
+}
+
+.archive-section__title {
+  font-family: var(--font-playfair), "Playfair Display", serif;
+  font-weight: 500;
+  font-size: clamp(32px, 4vw, 48px);
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  margin: 0;
+  color: var(--ink);
+}
+
+.archive-section__lede {
+  margin: 1.1rem 0 0;
+  max-width: 28rem;
+  font-size: 15px;
+  line-height: 1.75;
+  font-weight: 300;
+  color: rgba(23, 23, 22, 0.62);
+}
+
+/* —— Olfactive Identity — three signature plates —— */
+.olfactive-identity {
+  position: relative;
+}
+
+.olfactive-identity__stages {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(18px, 2.8vw, 36px);
+  align-items: stretch;
+}
+
+.olfactive-identity__stage {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 0;
+}
+
+.olfactive-identity__stage-label {
+  margin: 0 0 0.75rem;
+  font-size: 9px;
+  letter-spacing: 0.36em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: rgba(23, 23, 22, 0.32);
+  opacity: 0;
+  transform: translate3d(0, 10px, 0);
+  transition:
+    opacity 0.78s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.78s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.olfactive-identity__stage:has(.note-card--hero[data-visible="true"])
+  .olfactive-identity__stage-label {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+.olfactive-identity__stage:nth-child(1) .olfactive-identity__stage-label,
+.olfactive-identity__stage:nth-child(1) .note-card--hero .note-card__media,
+.olfactive-identity__stage:nth-child(1) .note-card--hero .note-card__caption {
+  transition-delay: 0ms;
+}
+
+.olfactive-identity__stage:nth-child(2) .olfactive-identity__stage-label,
+.olfactive-identity__stage:nth-child(2) .note-card--hero .note-card__media,
+.olfactive-identity__stage:nth-child(2) .note-card--hero .note-card__caption {
+  transition-delay: 110ms;
+}
+
+.olfactive-identity__stage:nth-child(3) .olfactive-identity__stage-label,
+.olfactive-identity__stage:nth-child(3) .note-card--hero .note-card__media,
+.olfactive-identity__stage:nth-child(3) .note-card--hero .note-card__caption {
+  transition-delay: 220ms;
+}
+
+.note-card {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  flex: 1;
+}
+
+.note-card--hero {
+  gap: 1.35rem;
+}
+
+.note-card--hero[data-visible="false"] .note-card__media,
+.note-card--hero[data-visible="false"] .note-card__caption {
+  opacity: 0;
+  transform: translate3d(0, 10px, 0);
+}
+
+.note-card--hero[data-visible="true"] .note-card__media,
+.note-card--hero[data-visible="true"] .note-card__caption {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+.note-card__media {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  background: #1a1714;
+  box-shadow: 0 10px 28px rgba(23, 23, 22, 0.08);
+  transition:
+    opacity 0.78s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.78s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.note-card--hero .note-card__caption {
+  transition:
+    opacity 0.78s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.78s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.note-card--hero .note-card__media {
+  aspect-ratio: 3 / 4;
+  min-height: 0;
+}
+
+.note-card__media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 1px rgba(23, 23, 22, 0.05);
+  z-index: 3;
+}
+
+.note-card__image {
+  object-fit: cover;
+  object-position: center;
+  width: 100%;
+  height: 100%;
+  transform: scale(1.01);
+  transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Warm museum grade + soft edge vignette */
+.note-card__grade {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    165deg,
+    rgba(255, 214, 170, 0.12) 0%,
+    transparent 42%,
+    rgba(60, 36, 18, 0.14) 100%
+  );
+  mix-blend-mode: soft-light;
+}
+
+.note-card__vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at 50% 42%,
+    transparent 42%,
+    rgba(18, 14, 10, 0.22) 78%,
+    rgba(12, 10, 8, 0.42) 100%
+  );
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .note-card--hero:hover .note-card__media {
+    box-shadow: 0 22px 48px rgba(23, 23, 22, 0.16);
+  }
+
+  .note-card--hero:hover .note-card__image {
+    transform: scale(1.02);
+  }
+}
+
+.note-card__plate {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(
+      ellipse at 40% 30%,
+      rgba(255, 255, 255, 0.22),
+      transparent 55%
+    ),
+    linear-gradient(165deg, #ebe3d4 0%, #d2c8b4 42%, #b9ae99 100%);
+}
+
+.olfactive-identity__stage[data-stage="top"] .note-card__plate {
+  background:
+    radial-gradient(
+      ellipse at 32% 24%,
+      rgba(255, 255, 255, 0.35),
+      transparent 48%
+    ),
+    linear-gradient(155deg, #f3ecde 0%, #e0d4ba 40%, #c9b995 100%);
+}
+
+.olfactive-identity__stage[data-stage="heart"] .note-card__plate {
+  background:
+    radial-gradient(
+      ellipse at 45% 28%,
+      rgba(255, 245, 230, 0.25),
+      transparent 52%
+    ),
+    linear-gradient(160deg, #e8d8c0 0%, #c9b192 46%, #9f866c 100%);
+}
+
+.olfactive-identity__stage[data-stage="base"] .note-card__plate {
+  background:
+    radial-gradient(
+      ellipse at 40% 30%,
+      rgba(255, 255, 255, 0.1),
+      transparent 48%
+    ),
+    linear-gradient(168deg, #c4b49a 0%, #8f7f69 48%, #5c5246 100%);
+}
+
+.olfactive-identity__stage[data-stage="base"] .note-card__initial {
+  color: rgba(238, 232, 220, 0.3);
+}
+
+.note-card__initial {
+  font-family: var(--font-playfair), "Playfair Display", serif;
+  font-size: clamp(56px, 7vw, 96px);
+  font-weight: 500;
+  letter-spacing: -0.05em;
+  color: rgba(23, 23, 22, 0.16);
+  line-height: 1;
+}
+
+.note-card__caption {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding-top: 0.15rem;
+  max-width: 18rem;
+}
+
+.note-card--hero .note-card__name {
+  font-size: clamp(26px, 2.5vw, 34px);
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+
+.note-card__name {
+  font-family: var(--font-playfair), "Playfair Display", serif;
+  font-size: clamp(16px, 1.5vw, 19px);
+  font-weight: 500;
+  letter-spacing: -0.018em;
+  color: var(--ink);
+}
+
+.note-card__line {
+  display: block;
+  font-size: 13px;
+  line-height: 1.55;
+  font-weight: 300;
+  color: rgba(23, 23, 22, 0.55);
+  max-width: 16rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .olfactive-identity__stage-label,
+  .note-card--hero[data-visible="false"] .note-card__media,
+  .note-card--hero[data-visible="true"] .note-card__media,
+  .note-card--hero[data-visible="false"] .note-card__caption,
+  .note-card--hero[data-visible="true"] .note-card__caption {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .note-card__image {
+    transition: none;
+  }
+}
+
+/* —— Signature Character —— */
+.signature-character__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-width: 28rem;
+  border-top: 1px solid var(--line);
+}
+
+.signature-character__item {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.15rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.signature-character__mark {
+  display: block;
+  height: 1px;
+  width: 100%;
+  background: var(--ink);
+  opacity: 0.35;
+}
+
+.signature-character__item:nth-child(1) .signature-character__mark {
+  opacity: 0.55;
+}
+.signature-character__item:nth-child(2) .signature-character__mark {
+  width: 85%;
+  opacity: 0.45;
+}
+.signature-character__item:nth-child(3) .signature-character__mark {
+  width: 70%;
+  opacity: 0.38;
+}
+.signature-character__item:nth-child(4) .signature-character__mark {
+  width: 55%;
+  opacity: 0.3;
+}
+.signature-character__item:nth-child(5) .signature-character__mark {
+  width: 42%;
+  opacity: 0.24;
+}
+
+.signature-character__name {
+  font-family: var(--font-playfair), "Playfair Display", serif;
+  font-size: clamp(22px, 2.5vw, 28px);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+/* —— Performance — NO.23 editorial language —— */
+.performance-section__board {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  border-top: 1px solid var(--line);
+}
+
+.performance-section .archive-section__heading {
+  margin-bottom: clamp(40px, 5vw, 64px);
+}
+
+.performance-section__facet {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 2rem 1.6rem 2rem 0;
+  border-bottom: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+  min-height: 212px;
+}
+
+.performance-section__facet:nth-child(3n) {
+  border-right: 0;
+  padding-right: 0;
+}
+
+.performance-section__facet-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.performance-section__label {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: rgba(23, 23, 22, 0.4);
+}
+
+.performance-section__value {
+  font-family: var(--font-playfair), "Playfair Display", serif;
+  font-size: clamp(22px, 2.2vw, 28px);
+  font-weight: 500;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+  color: var(--ink);
+}
+
+/* Quiet continuum — time / presence without scores */
+.perf-visual__continuum {
+  --perf-pos: 0.5;
+  position: relative;
+  height: 28px;
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+}
+
+.perf-visual__continuum-line {
+  display: block;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    rgba(23, 23, 22, 0.12),
+    rgba(23, 23, 22, 0.35) 50%,
+    rgba(23, 23, 22, 0.12)
+  );
+}
+
+.perf-visual__continuum-node {
+  position: absolute;
+  top: 50%;
+  left: calc(var(--perf-pos) * 100%);
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ink);
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 4px var(--atm-document, var(--paper));
+}
+
+/* Presence rings — projection / sillage */
+.perf-visual__rings {
+  --perf-pos: 0.5;
+  position: relative;
+  width: 72px;
+  height: 72px;
+  margin-top: auto;
+}
+
+.perf-visual__rings span {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(23, 23, 22, 0.14);
+}
+
+.perf-visual__rings span:nth-child(1) {
+  inset: 22%;
+  opacity: calc(0.35 + var(--perf-pos) * 0.4);
+  border-color: rgba(23, 23, 22, 0.45);
+}
+
+.perf-visual__rings span:nth-child(2) {
+  inset: 10%;
+  opacity: calc(0.25 + var(--perf-pos) * 0.35);
+}
+
+.perf-visual__rings span:nth-child(3) {
+  opacity: calc(0.15 + var(--perf-pos) * 0.25);
+}
+
+/* Season / occasion vocabulary */
+.perf-visual__spectrum {
+  list-style: none;
+  margin: auto 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 1rem;
+}
+
+.perf-visual__spectrum li {
+  font-family: var(--font-playfair), "Playfair Display", serif;
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  color: rgba(23, 23, 22, 0.28);
+}
+
+.perf-visual__spectrum li[data-active="true"] {
+  color: var(--ink);
+}
+
+/* Versatility poles */
+.perf-visual__span {
+  --perf-pos: 0.5;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: auto;
+}
+
+.perf-visual__span-pole {
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(23, 23, 22, 0.38);
+}
+
+.perf-visual__span-track {
+  position: relative;
+  height: 1px;
+  background: rgba(23, 23, 22, 0.18);
+}
+
+.perf-visual__span-node {
+  position: absolute;
+  top: 50%;
+  left: calc(var(--perf-pos) * 100%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ink);
+  transform: translate(-50%, -50%);
+}
+
+/* —— Complete pyramid —— */
+.olfactive-pyramid__stages {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(28px, 4vw, 48px);
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--line);
+}
+
+.olfactive-pyramid__label {
+  margin: 1.5rem 0 1rem;
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: rgba(23, 23, 22, 0.4);
+}
+
+.olfactive-pyramid__notes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.olfactive-pyramid__notes li {
+  font-size: 15px;
+  line-height: 1.5;
+  color: rgba(23, 23, 22, 0.72);
+}
+
+/* —— Story —— */
+.story-section__intro {
+  max-width: 38rem;
+  margin: 0 0 clamp(40px, 5vw, 56px);
+  font-family: var(--font-playfair), "Playfair Display", serif;
+  font-size: clamp(20px, 2.4vw, 26px);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.45;
+  color: var(--ink);
+}
+
+.story-section__blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-width: 40rem;
+  border-top: 1px solid var(--line);
+}
+
+.story-section__block {
+  padding: 1.75rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.story-section__block h3 {
+  margin: 0 0 0.75rem;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: rgba(23, 23, 22, 0.42);
+}
+
+.story-section__block p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.8;
+  color: rgba(23, 23, 22, 0.72);
+}
+
+/* —— Related —— */
+.related-fragrances__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+
+.related-fragrances__list li {
+  border-bottom: 1px solid var(--line);
+}
+
+.related-fragrances__link {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1.5rem;
+  padding: 1.35rem 0;
+  transition: opacity 0.25s;
+}
+
+.related-fragrances__link:hover {
+  opacity: 0.62;
+}
+
+.related-fragrances__name {
+  font-family: var(--font-playfair), "Playfair Display", serif;
+  font-size: clamp(22px, 2.4vw, 30px);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.related-fragrances__meta {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(23, 23, 22, 0.48);
+  white-space: nowrap;
+}
+
+/* —— Collection line —— */
+.collection-line__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  border-top: 1px solid var(--line);
+}
+
+.collection-line__list li {
+  border-bottom: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+}
+
+.collection-line__list li:nth-child(2n) {
+  border-right: 0;
+}
+
+.collection-line__item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 1.5rem 1.25rem 1.5rem 0;
+  min-height: 110px;
+  transition: opacity 0.25s;
+}
+
+a.collection-line__item:hover {
+  opacity: 0.62;
+}
+
+.collection-line__item--current {
+  opacity: 1;
+}
+
+.collection-line__item--current .collection-line__name {
+  color: var(--ink);
+}
+
+.collection-line__item--current .collection-line__meta::after {
+  content: " · Actual";
+  letter-spacing: 0.12em;
+}
+
+.collection-line__name {
+  font-family: var(--font-playfair), "Playfair Display", serif;
+  font-size: clamp(20px, 2.2vw, 26px);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.collection-line__meta {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(23, 23, 22, 0.48);
+}
+
+@media (max-width: 900px) {
+  .olfactive-identity__stages {
+    grid-template-columns: 1fr;
+    gap: clamp(36px, 7vw, 52px);
+  }
+
+  .note-card--hero .note-card__media {
+    aspect-ratio: 3 / 4;
+  }
+
+  .performance-section__board {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .performance-section__facet {
+    border-right: 1px solid var(--line);
+    padding-right: 1.25rem;
+  }
+
+  .performance-section__facet:nth-child(3n) {
+    border-right: 1px solid var(--line);
+  }
+
+  .performance-section__facet:nth-child(2n) {
+    border-right: 0;
+    padding-right: 0;
+  }
+
+  .olfactive-pyramid__stages {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .olfactive-pyramid__stage {
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 1.25rem;
+  }
+
+  .olfactive-pyramid__label {
+    margin-top: 1.25rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .perfume-document {
+    margin-top: -10vh;
+    padding: 2.5vh 0 88px;
+    box-shadow: 0 -28px 56px rgba(0, 0, 0, 0.18);
+  }
+
+  .perfume-document__sheet {
+    gap: 64px;
+  }
+
+  .olfactive-identity__stages {
+    gap: clamp(40px, 8vw, 56px);
+  }
+
+  .note-card--hero .note-card__name {
+    font-size: 26px;
+  }
+
+  .note-card__line {
+    font-size: 12.5px;
+  }
+
+  .note-card__initial {
+    font-size: 64px;
+  }
+
+  .performance-section__board,
+  .collection-line__list {
+    grid-template-columns: 1fr;
+  }
+
+  .performance-section__facet,
+  .collection-line__list li {
+    border-right: 0;
+    padding-right: 0;
+  }
+
+  .related-fragrances__link {
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+}
