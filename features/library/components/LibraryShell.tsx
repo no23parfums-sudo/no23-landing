@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import Link from "next/link";
 import type { AtmosphereId } from "../lib/atmosphere";
+import { LibraryHeader } from "./LibraryHeader";
 
 type LibraryShellProps = {
   children: ReactNode;
@@ -24,19 +25,18 @@ export function LibraryShell({
       data-atmosphere={isPerfume ? atmosphere : undefined}
       style={
         isPerfume
-          ? ({ "--hero-progress": 0 } as CSSProperties)
+          ? ({
+              "--hero-progress": 0,
+              "--hero-photo-fade": 0,
+              "--hero-ui-fade": 0,
+              "--hero-doc-rise": 0,
+              "--hero-depth-bg": "0vh",
+              "--hero-depth-ui": "0vh",
+            } as CSSProperties)
           : undefined
       }
     >
-      <header className="library-header">
-        <Link className="brand library-brand" href="/">
-          <span className="brand-main">NO.23</span>
-          <span className="brand-sub">OLFACTORY STUDIO</span>
-        </Link>
-        <nav className="library-nav" aria-label="Biblioteca">
-          <Link href="/biblioteca">Biblioteca</Link>
-        </nav>
-      </header>
+      <LibraryHeader />
       <main
         className={
           isPerfume ? "library-main library-main--perfume" : "library-main"

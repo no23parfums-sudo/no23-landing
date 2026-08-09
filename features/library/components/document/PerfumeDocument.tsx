@@ -1,29 +1,32 @@
 import type { PerfumePresentation } from "../../lib/presentation";
 import { CollectionLine } from "./CollectionLine";
+import { HistoryTimeline } from "./HistoryTimeline";
+import { Moodboard } from "./Moodboard";
 import { OlfactiveIdentity } from "./OlfactiveIdentity";
-import { OlfactivePyramid } from "./OlfactivePyramid";
+import { OlfactoryArchitecture } from "./OlfactoryArchitecture";
 import { PerformanceSection } from "./PerformanceSection";
 import { RelatedFragrances } from "./RelatedFragrances";
-import { SignatureCharacter } from "./SignatureCharacter";
-import { StorySection } from "./StorySection";
 
 type PerfumeDocumentProps = {
   presentation: PerfumePresentation;
 };
 
 /**
- * Archival document that follows the Hero handoff.
- * Section order is the permanent NO.23 fragrance architecture.
+ * Master fragrance document — permanent NO.23 chapter order.
+ * Content changes per fragrance; structure does not.
  */
 export function PerfumeDocument({ presentation }: PerfumeDocumentProps) {
   return (
     <div className="perfume-document">
       <div className="perfume-document__sheet">
-        <OlfactiveIdentity signatureNotes={presentation.signatureNotes} />
-        <SignatureCharacter character={presentation.signatureCharacter} />
+        <OlfactiveIdentity
+          signatureNotes={presentation.signatureNotes}
+          chapter={presentation.notesChapter}
+        />
+        <OlfactoryArchitecture presentation={presentation} />
+        <Moodboard moodboard={presentation.moodboard} />
         <PerformanceSection performance={presentation.performance} />
-        <OlfactivePyramid pyramid={presentation.pyramid} />
-        <StorySection story={presentation.story} />
+        <HistoryTimeline history={presentation.history} />
         <RelatedFragrances related={presentation.related} />
         <CollectionLine collection={presentation.collection} />
       </div>

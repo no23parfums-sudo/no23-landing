@@ -5,57 +5,120 @@ type HeroVariantSelectorProps = {
   members?: CollectionMember[];
   /** Fallback when no variant line is available */
   concentration?: string | null;
+  /** inline = compact under title; rail = labeled control in metadata column */
+  placement?: "inline" | "rail";
+  /** Controlled selection (in-hero family swap) */
+  selectedSlug?: string | null;
+  onSelect?: (member: CollectionMember) => void;
 };
 
+function displayLabel(
+  member: CollectionMember,
+  placement: "inline" | "rail",
+): string {
+  if (placement === "rail") {
+    return member.concentration ?? member.shortConcentration ?? member.name;
+  }
+  return member.shortConcentration ?? member.concentration ?? member.name;
+}
+
 /**
- * Quiet concentration / variant index for the opening spread.
- * Links only when a record href exists; otherwise inactive.
+ * Concentration switch — editorial index for navigating sibling concentrations.
+ * When onSelect is provided, switches in place (hero plate swap).
+ * Otherwise links when href exists.
  */
 export function HeroVariantSelector({
   members,
   concentration,
+  placement = "inline",
+  selectedSlug,
+  onSelect,
 }: HeroVariantSelectorProps) {
   const variants =
-    members?.filter((member) => member.concentration) ?? [];
+    members?.filter(
+      (member) => member.concentration || member.shortConcentration,
+    ) ?? [];
 
   if (!variants.length) {
     if (!concentration) return null;
     return (
-      <p className="hero-variants hero-variants--solo">
+      <div
+        className={
+          placement === "rail"
+            ? "hero-variants hero-variants--rail hero-variants--solo"
+            : "hero-variants hero-variants--solo"
+        }
+      >
+        {placement === "rail" ? (
+          <span className="hero-variants__label">Concentración</span>
+        ) : null}
         <span className="hero-variants__current">{concentration}</span>
-      </p>
+      </div>
     );
   }
 
+  const activeSlug =
+    selectedSlug ??
+    variants.find((member) => member.current)?.slug ??
+    null;
+
   return (
-    <nav className="hero-variants" aria-label="Variantes">
+    <nav
+      className={
+        placement === "rail"
+          ? "hero-variants hero-variants--rail"
+          : "hero-variants"
+      }
+      aria-label="Concentración"
+    >
+      {placement === "rail" ? (
+        <span className="hero-variants__label">Concentración</span>
+      ) : null}
       <ul className="hero-variants__list">
-        {variants.map((member) => {
-          const label = member.concentration!;
-
-          if (member.current) {
-            return (
-              <li key={member.slug}>
-                <span className="hero-variants__current" aria-current="page">
-                  {label}
-                </span>
-              </li>
-            );
-          }
-
-          if (member.href) {
-            return (
-              <li key={member.slug}>
-                <Link href={member.href} className="hero-variants__link">
-                  {label}
-                </Link>
-              </li>
-            );
-          }
+        {variants.map((member, index) => {
+          const label = displayLabel(member, placement);
+          const full = member.concentration ?? label;
+          const isActive = activeSlug
+            ? member.slug === activeSlug
+            : Boolean(member.current);
 
           return (
-            <li key={member.slug}>
-              <span className="hero-variants__inactive">{label}</span>
+            <li key={member.slug} className="hero-variants__item">
+              {placement === "inline" && index > 0 ? (
+                <span className="hero-variants__rule" aria-hidden="true">
+                  |
+                </span>
+              ) : null}
+              {isActive ? (
+                <span
+                  className="hero-variants__current"
+                  aria-current="true"
+                  title={full}
+                >
+                  {label}
+                </span>
+              ) : onSelect ? (
+                <button
+                  type="button"
+                  className="hero-variants__link"
+                  title={full}
+                  onClick={() => onSelect(member)}
+                >
+                  {label}
+                </button>
+              ) : member.href ? (
+                <Link
+                  href={member.href}
+                  className="hero-variants__link"
+                  title={full}
+                >
+                  {label}
+                </Link>
+              ) : (
+                <span className="hero-variants__inactive" title={full}>
+                  {label}
+                </span>
+              )}
             </li>
           );
         })}
