@@ -22,40 +22,24 @@ const easeOut = [0.22, 1, 0.36, 1] as const;
 const sectionVariants: Variants = {
   hidden: {},
   show: {
-    /* Masthead first, then specimen group */
-    transition: { staggerChildren: 0.28, delayChildren: 0.06 },
-  },
-};
-
-const mastheadVariants: Variants = {
-  hidden: {},
-  show: {
-    transition: { staggerChildren: 0.13, delayChildren: 0.1 },
+    transition: { staggerChildren: 0.05, delayChildren: 0 },
   },
 };
 
 const platesGroupVariants: Variants = {
   hidden: {},
   show: {
-    transition: { staggerChildren: 0.14, delayChildren: 0.08 },
-  },
-};
-
-const mastheadLineVariants: Variants = {
-  hidden: { opacity: 0, y: 12 },
-  show: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.7, ease: easeOut },
+    /* Minimal stagger — must not invent an empty cream beat */
+    transition: { staggerChildren: 0.03, delayChildren: 0 },
   },
 };
 
 const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 14 },
+  hidden: { opacity: 0, y: 8 },
   show: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.72, ease: easeOut },
+    transition: { duration: 0.4, ease: easeOut },
   },
 };
 
@@ -67,8 +51,9 @@ const STAGE_INDEX: Record<string, string> = {
 
 /**
  * Chapter 02 — Archival Triptych.
- * Three simultaneous specimen plates on a warm document field.
- * Data-driven; never fragrance-specific layout.
+ * Three specimen plates on the warm document field.
+ * When chapter.revealInHero, the editorial intro lives on the Hero;
+ * this section opens directly into the materials.
  */
 export function OlfactiveIdentity({
   signatureNotes,
@@ -78,46 +63,59 @@ export function OlfactiveIdentity({
   const notes = signatureNotes?.filter((item) => item.note?.name) ?? [];
   if (!notes.length) return null;
 
-  const eyebrow = chapter?.eyebrow ?? "Notas";
-  const title = chapter?.title ?? "Ingredientes principales";
-  const lede = chapter?.lede;
+  const revealInHero = Boolean(chapter?.revealInHero);
+  const title =
+    chapter?.title ??
+    chapter?.eyebrow ??
+    "Notas Signatura";
+  /*
+   * Cream-handoff path: plates must be fully opaque before the document
+   * becomes visible. No enter opacity animation / whileInView gate — those
+   * produce a one-frame empty cream flash on fast downward scroll.
+   */
+  const rideCreamPlane = revealInHero;
 
   return (
     <motion.section
-      className="archive-section fragrance-notes"
+      className={
+        revealInHero
+          ? "archive-section fragrance-notes fragrance-notes--hero-intro"
+          : "archive-section fragrance-notes"
+      }
       aria-labelledby="fragrance-notes-title"
-      variants={reduceMotion ? undefined : sectionVariants}
-      initial={reduceMotion ? false : "hidden"}
-      whileInView={reduceMotion ? undefined : "show"}
-      /* Reveal after the ivory document plane has established */
-      viewport={{ once: true, amount: 0.42, margin: "0px 0px -8% 0px" }}
+      variants={
+        reduceMotion || rideCreamPlane ? undefined : sectionVariants
+      }
+      initial={reduceMotion || rideCreamPlane ? false : "hidden"}
+      whileInView={
+        reduceMotion || rideCreamPlane ? undefined : "show"
+      }
+      viewport={
+        reduceMotion || rideCreamPlane
+          ? undefined
+          : { once: true, amount: 0.08, margin: "0px 0px 12% 0px" }
+      }
     >
-      <motion.header
-        className="archive-section__heading fragrance-notes__masthead"
-        variants={reduceMotion ? undefined : mastheadVariants}
-      >
-        <motion.span
-          className="archive-section__eyebrow"
-          variants={reduceMotion ? undefined : mastheadLineVariants}
-        >
-          {eyebrow}
-        </motion.span>
-        <motion.h2
-          id="fragrance-notes-title"
-          className="archive-section__title"
-          variants={reduceMotion ? undefined : mastheadLineVariants}
-        >
-          {title}
-        </motion.h2>
-        {lede ? (
-          <motion.p
-            className="archive-section__lede"
-            variants={reduceMotion ? undefined : mastheadLineVariants}
-          >
-            {lede}
-          </motion.p>
-        ) : null}
-      </motion.header>
+      <h2 id="fragrance-notes-title" className="sr-only">
+        {title}
+      </h2>
+
+      {!revealInHero ? (
+        <header className="archive-section__heading fragrance-notes__masthead">
+          {chapter?.index ? (
+            <span className="archive-section__index">{chapter.index}</span>
+          ) : null}
+          {chapter?.eyebrow ? (
+            <span className="archive-section__eyebrow">{chapter.eyebrow}</span>
+          ) : null}
+          {chapter?.title ? (
+            <p className="archive-section__title">{chapter.title}</p>
+          ) : null}
+          {chapter?.lede ? (
+            <p className="archive-section__lede">{chapter.lede}</p>
+          ) : null}
+        </header>
+      ) : null}
 
       <motion.div
         className="fragrance-notes__triptych"
@@ -135,7 +133,9 @@ export function OlfactiveIdentity({
               key={item.stage}
               className="note-specimen"
               data-stage={item.stage}
-              variants={reduceMotion ? undefined : itemVariants}
+              variants={
+                reduceMotion || rideCreamPlane ? undefined : itemVariants
+              }
             >
               <header className="note-specimen__meta">
                 <span className="note-specimen__index" aria-hidden="true">
@@ -157,6 +157,7 @@ export function OlfactiveIdentity({
                     sizes="(max-width: 900px) 92vw, 360px"
                     className="note-specimen__image"
                     quality={88}
+                    priority={rideCreamPlane && index < 3}
                   />
                 ) : (
                   <span className="note-specimen__fallback" aria-hidden="true">

@@ -1,206 +1,710 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useReducedMotion } from "motion/react";
 import {
-  getArchitecture,
-  type NoteStage,
-  type PerfumePresentation,
-  type SignatureNote,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
+import type {
+  ArchitectureHighlight,
+  ArchitecturePresentation,
+  NoteEntry,
+  NoteMapAnchor,
+  NoteStage,
+  SignatureNote,
 } from "../../lib/presentation";
+import { setupS2S3HandoffRuntime } from "./s2s3HandoffRuntime";
 
 type OlfactoryArchitectureProps = {
-  presentation: PerfumePresentation;
+  architecture?: ArchitecturePresentation | null;
+  signatureNotes?: SignatureNote[];
 };
 
-function useReveal(threshold = 0.15) {
-  const ref = useRef<HTMLElement>(null);
-  const [visible, setVisible] = useState(false);
+type PhaseId = "top" | "heart" | "base" | "composition";
+type RevealState = "dormant" | "active" | "explore";
 
-  useEffect(() => {
-    const node = ref.current;
-    if (!node) return;
+const PHASE_ORDER: PhaseId[] = ["top", "heart", "base", "composition"];
 
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (reduced.matches) {
-      setVisible(true);
-      return;
-    }
+const PHASE_NAV: { id: PhaseId; index: string; label: string }[] = [
+  { id: "top", index: "01", label: "Salida" },
+  { id: "heart", index: "02", label: "Corazón" },
+  { id: "base", index: "03", label: "Fondo" },
+  { id: "composition", index: "04", label: "Composición" },
+];
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) {
-          setVisible(true);
-          observer.disconnect();
-        }
-      },
-      { threshold, rootMargin: "0px 0px -8% 0px" },
-    );
+const COMPOSITION_SWEEP_MS = 880;
 
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [threshold]);
-
-  return { ref, visible };
+function phaseIndex(id: PhaseId) {
+  return PHASE_ORDER.indexOf(id);
 }
 
-function resolveLayerImage(
-  stage: NoteStage,
-  signatureNotes?: SignatureNote[],
-): string | undefined {
-  const fromStage = stage.notes.find((n) => n.imageSrc)?.imageSrc;
-  if (fromStage) return fromStage;
-  return signatureNotes?.find((s) => s.stage === stage.id)?.note.imageSrc;
-}
-
-function MaterialStack({
-  stages,
-  signatureNotes,
-  visible,
-}: {
-  stages: NoteStage[];
-  signatureNotes?: SignatureNote[];
-  visible: boolean;
-}) {
+function noteId(note: NoteEntry) {
   return (
-    <div
-      className="arch-stack"
-      data-visible={visible ? "true" : "false"}
+    note.id ??
+    note.slug ??
+    note.name
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+  );
+}
+
+function resolveMap(map: NoteMapAnchor) {
+  const anchorX = map.anchorX ?? map.x ?? 50;
+  const anchorY = map.anchorY ?? map.y ?? 50;
+  const align = map.align ?? map.side ?? (anchorX >= 58 ? "right" : "left");
+  const labelX =
+    map.labelX ??
+    (align === "right" ? Math.min(96, anchorX + 10) : Math.max(10, anchorX - 10));
+  const labelY = map.labelY ?? anchorY;
+  const hotspotX = map.hotspotX ?? anchorX;
+  const hotspotY = map.hotspotY ?? anchorY;
+  const hotspotW = map.hotspotW ?? 12;
+  const hotspotH = map.hotspotH ?? 12;
+  return {
+    anchorX,
+    anchorY,
+    labelX,
+    labelY,
+    align,
+    hotspotX,
+    hotspotY,
+    hotspotW,
+    hotspotH,
+  };
+}
+
+function leaderEndpoint(
+  anchorX: number,
+  anchorY: number,
+  labelX: number,
+  labelY: number,
+) {
+  const dx = labelX - anchorX;
+  const dy = labelY - anchorY;
+  const len = Math.hypot(dx, dy) || 1;
+  const t = Math.max(0.12, 1 - 3.4 / len);
+  return { x2: anchorX + dx * t, y2: anchorY + dy * t };
+}
+
+function signatureForStage(
+  stageId: string,
+  signatureNotes?: SignatureNote[],
+) {
+  return signatureNotes?.find((s) => s.stage === stageId);
+}
+
+function Annotation({
+  note,
+  reveal,
+  featured,
+  index,
+}: {
+  note: NoteEntry;
+  reveal: RevealState;
+  featured: boolean;
+  index: number;
+}) {
+  const map = note.map;
+  if (!map) return null;
+  const { anchorX, anchorY, labelX, labelY, align } = resolveMap(map);
+  const { x2, y2 } = leaderEndpoint(anchorX, anchorY, labelX, labelY);
+
+  return (
+    <li
+      className="arch-atlas__anno"
+      data-align={align}
+      data-reveal={reveal}
+      data-featured={featured ? "true" : "false"}
+      style={
+        {
+          "--anno-i": index,
+          "--anchor-x": `${anchorX}%`,
+          "--anchor-y": `${anchorY}%`,
+          "--label-x": `${labelX}%`,
+          "--label-y": `${labelY}%`,
+        } as CSSProperties
+      }
+    >
+      <span className="arch-atlas__anno-dot" aria-hidden="true" />
+      <svg
+        className="arch-atlas__anno-leader"
+        viewBox="0 0 100 100"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
+        <line
+          className="arch-atlas__anno-leader-line"
+          x1={anchorX}
+          y1={anchorY}
+          x2={x2}
+          y2={y2}
+          vectorEffect="non-scaling-stroke"
+          pathLength={1}
+        />
+      </svg>
+      <span className="arch-atlas__anno-label">{note.name}</span>
+    </li>
+  );
+}
+
+/** Museum lighting — phase family or single explore ingredient. */
+function PhaseEmphasis({
+  highlights,
+  uid,
+  mode,
+}: {
+  highlights: ArchitectureHighlight[];
+  uid: string;
+  mode: "phase" | "composition" | "explore" | "off";
+}) {
+  if (mode === "off" || !highlights.length) return null;
+  const blurId = `${uid}-blur`;
+  const dimMaskId = `${uid}-dim`;
+  /* Restored controlled museum lighting */
+  const dimFill =
+    mode === "composition"
+      ? "rgba(3, 5, 9, 0.1)"
+      : mode === "explore"
+        ? "rgba(3, 5, 9, 0.28)"
+        : "rgba(3, 5, 9, 0.28)";
+  const softBlurId = `${uid}-soft`;
+
+  return (
+    <svg
+      className="arch-atlas__emphasis"
+      data-mode={mode}
+      viewBox="0 0 100 100"
+      preserveAspectRatio="none"
       aria-hidden="true"
     >
-      <div className="arch-stack__plinth" />
-      {[...stages].reverse().map((stage, reverseIndex) => {
-        const index = stages.length - 1 - reverseIndex;
-        const src = resolveLayerImage(stage, signatureNotes);
-        const featured = stage.notes[0]?.name;
-        if (!src) return null;
+      <defs>
+        <filter id={blurId} x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="3.6" />
+        </filter>
+        <filter id={softBlurId} x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="5.2" />
+        </filter>
+        <mask
+          id={dimMaskId}
+          maskUnits="userSpaceOnUse"
+          x="0"
+          y="0"
+          width="100"
+          height="100"
+        >
+          <rect x="0" y="0" width="100" height="100" fill="white" />
+          {highlights.map((h, i) => (
+            <ellipse
+              key={`m-${i}`}
+              cx={h.cx}
+              cy={h.cy}
+              rx={h.rx}
+              ry={h.ry}
+              fill="black"
+              filter={`url(#${blurId})`}
+            />
+          ))}
+        </mask>
+      </defs>
 
-        return (
-          <figure
-            key={stage.id}
-            className="arch-stack__layer"
-            data-stage={stage.id}
-            data-index={index + 1}
-            style={{ "--layer-i": index } as CSSProperties}
-          >
-            <div className="arch-stack__pane">
-              <Image
-                src={src}
-                alt=""
-                fill
-                sizes="(max-width: 900px) 80vw, 420px"
-                className="arch-stack__image"
-                quality={75}
+      <rect
+        x="0"
+        y="0"
+        width="100"
+        height="100"
+        fill={dimFill}
+        mask={`url(#${dimMaskId})`}
+      />
+
+      {mode === "phase" || mode === "explore"
+        ? highlights.map((h, i) => (
+            <g key={`g-${i}`}>
+              <ellipse
+                className="arch-atlas__emphasis-glow"
+                cx={h.cx}
+                cy={h.cy}
+                rx={h.rx * 1.02}
+                ry={h.ry * 1.02}
+                filter={`url(#${softBlurId})`}
               />
-              <span className="arch-stack__grade" />
-              <span className="arch-stack__glass" />
-            </div>
-            {featured ? (
-              <figcaption className="arch-stack__tag">{featured}</figcaption>
-            ) : null}
-          </figure>
-        );
-      })}
+              <ellipse
+                className="arch-atlas__emphasis-glow--core"
+                cx={h.cx}
+                cy={h.cy}
+                rx={h.rx * 0.58}
+                ry={h.ry * 0.58}
+                filter={`url(#${blurId})`}
+              />
+            </g>
+          ))
+        : null}
+    </svg>
+  );
+}
+
+function CompositionSweep({ active }: { active: boolean }) {
+  if (!active) return null;
+  return (
+    <div className="arch-atlas__sweep" aria-hidden="true">
+      <span className="arch-atlas__sweep-band arch-atlas__sweep-band--citrus" />
+      <span className="arch-atlas__sweep-band arch-atlas__sweep-band--heart" />
+      <span className="arch-atlas__sweep-band arch-atlas__sweep-band--woods" />
+      <span className="arch-atlas__sweep-band arch-atlas__sweep-band--bottle" />
     </div>
   );
 }
 
+type FlatNote = {
+  id: string;
+  note: NoteEntry;
+  stageId: string;
+  index: number;
+};
+
 /**
- * Arquitectura olfativa — immersive material study.
- * Photography leads; geometry only supports. Data-driven strata.
+ * Split editorial olfactory atlas (EDP still-life only).
+ * Systems: image · lighting · annotation/hotspot — independently driven.
  */
 export function OlfactoryArchitecture({
-  presentation,
+  architecture,
+  signatureNotes,
 }: OlfactoryArchitectureProps) {
-  const architecture = getArchitecture(presentation);
+  const reduceMotion = useReducedMotion();
+  const tablistId = useId();
+  const uid = useId().replace(/:/g, "");
+  const sectionRef = useRef<HTMLElement>(null);
+  const [phase, setPhase] = useState<PhaseId>("top");
+  const [panelTick, setPanelTick] = useState(0);
+  const [sweeping, setSweeping] = useState(false);
+  const [exploreId, setExploreId] = useState<string | null>(null);
+  const prevPhaseRef = useRef<PhaseId>("top");
+
   const stages = architecture?.stages?.filter((s) => s.notes.length) ?? [];
-  const { ref, visible } = useReveal(0.12);
+  const stillLifeSrc = architecture?.stillLifeSrc;
+  const sectionBackgroundSrc =
+    architecture?.sectionBackgroundSrc ?? stillLifeSrc;
 
-  if (!stages.length) return null;
+  /*
+   * Normalize deps so the effect array is always length 2 / same order.
+   * stillLifeSrc may be undefined while concentration has no Architecture —
+   * use "" so the slot still exists (never omit the dependency).
+   */
+  const reduceMotionDep = Boolean(reduceMotion);
+  const stillLifeSrcDep = stillLifeSrc ?? "";
 
-  const eyebrow = architecture?.eyebrow ?? "Composición";
-  const title = architecture?.title ?? "Arquitectura olfativa";
-  const lede = architecture?.lede?.trim();
-  const { perfumer, signatureNotes } = presentation;
+  const flatNotes: FlatNote[] = stages.flatMap((stage) =>
+    stage.notes.map((note, index) => ({
+      id: noteId(note),
+      note,
+      stageId: stage.id,
+      index,
+    })),
+  );
+
+  /*
+   * S2→S3 ScrollTrigger runtime — ownership / lifecycle only.
+   * Rebinds when stillLifeSrcDep changes (concentration ↔ Architecture asset).
+   * Safely no-ops when section DOM is absent or src is empty.
+   */
+  useEffect(() => {
+    if (!stillLifeSrcDep) return;
+
+    const section = sectionRef.current;
+    if (!section) return;
+
+    const ac = new AbortController();
+    let cleanup: (() => void) | undefined;
+
+    void setupS2S3HandoffRuntime({
+      section,
+      reduceMotion: reduceMotionDep,
+      signal: ac.signal,
+    }).then((teardown) => {
+      if (ac.signal.aborted) {
+        teardown();
+        return;
+      }
+      cleanup = teardown;
+    });
+
+    return () => {
+      ac.abort();
+      cleanup?.();
+    };
+  }, [reduceMotionDep, stillLifeSrcDep]);
+
+  useEffect(() => {
+    const prev = prevPhaseRef.current;
+    prevPhaseRef.current = phase;
+    if (phase !== "composition") {
+      setExploreId(null);
+      setSweeping(false);
+      return;
+    }
+    if (prev === "composition") return;
+    if (reduceMotion) {
+      setSweeping(false);
+      return;
+    }
+    setSweeping(true);
+    const t = window.setTimeout(() => setSweeping(false), COMPOSITION_SWEEP_MS);
+    return () => window.clearTimeout(t);
+  }, [phase, reduceMotion]);
+
+  const selectPhase = (id: PhaseId) => {
+    setPhase(id);
+    setPanelTick((n) => n + 1);
+    setExploreId(null);
+  };
+
+  if (!stillLifeSrc || !stages.length) return null;
+
+  const index = architecture?.index ?? "04";
+  const eyebrow = architecture?.eyebrow ?? "Arquitectura Olfativa";
+  const isComposition = phase === "composition";
+  const activeStage = isComposition
+    ? null
+    : (stages.find((s) => s.id === phase) ?? stages[0]);
+  const navMeta = PHASE_NAV.find((n) => n.id === phase);
+  const signature = activeStage
+    ? signatureForStage(activeStage.id, signatureNotes)
+    : undefined;
+  const signatureName =
+    signature?.note.name ?? activeStage?.notes[0]?.name ?? "";
+  const traits = activeStage?.traits;
+  const noteList = activeStage?.notes ?? [];
+  const composition = architecture?.composition;
+  const maxNotes = Math.max(...stages.map((s) => s.notes.length), 7);
+
+  const exploreNote = exploreId
+    ? flatNotes.find((n) => n.id === exploreId)
+    : null;
+
+  let emphasisMode: "phase" | "composition" | "explore" | "off" = "phase";
+  let highlights: ArchitectureHighlight[] = activeStage?.highlights ?? [];
+
+  if (isComposition) {
+    if (exploreNote?.note.map) {
+      const m = resolveMap(exploreNote.note.map);
+      emphasisMode = "explore";
+      highlights = [
+        {
+          cx: m.hotspotX,
+          cy: m.hotspotY,
+          rx: Math.max(m.hotspotW * 0.7, 8),
+          ry: Math.max(m.hotspotH * 0.7, 8),
+        },
+      ];
+    } else {
+      emphasisMode = "composition";
+      highlights = [
+        { cx: 20, cy: 48, rx: 22, ry: 32 },
+        { cx: 80, cy: 46, rx: 20, ry: 24 },
+        { cx: 54, cy: 78, rx: 24, ry: 18 },
+        { cx: 50, cy: 42, rx: 12, ry: 18 },
+      ];
+    }
+  }
+
+  const revealFor = (flat: FlatNote): RevealState => {
+    if (isComposition) {
+      return exploreId === flat.id ? "explore" : "dormant";
+    }
+    return flat.stageId === phase ? "active" : "dormant";
+  };
+
+  /*
+   * Rail hide rule:
+   * - Salida (left annotation cluster) → conceal
+   * - Composición explore with left-side label → conceal
+   * - Corazón / Fondo / Composición default → show
+   */
+  const railConceal = (() => {
+    if (phase === "top") return true;
+    if (isComposition && exploreNote?.note.map) {
+      const m = resolveMap(exploreNote.note.map);
+      return m.labelX <= 42 || (m.align === "left" && m.anchorX < 58);
+    }
+    return false;
+  })();
 
   return (
     <section
-      ref={ref}
-      className="archive-section olfactory-architecture"
+      ref={sectionRef}
+      className="archive-section olfactory-architecture olfactory-architecture--atlas"
       aria-labelledby="architecture-title"
-      data-visible={visible ? "true" : "false"}
+      data-phase={phase}
+      data-sweeping={sweeping ? "true" : "false"}
+      data-exploring={exploreId ? "true" : "false"}
+      data-rail-conceal={railConceal ? "true" : "false"}
+      data-reduce-motion={reduceMotion ? "true" : "false"}
+      data-page-chapter="04"
     >
-      <div className="olfactory-architecture__chamber">
-        <div className="olfactory-architecture__inner">
-          <header className="arch-intro">
-            <span className="arch-intro__eyebrow">{eyebrow}</span>
-            <h2 id="architecture-title" className="arch-intro__title">
-              {title}
-            </h2>
-            {lede ? <p className="arch-intro__lede">{lede}</p> : null}
+      <div className="arch-atlas__scene">
+        <div className="arch-atlas__atmosphere" aria-hidden="true">
+          <Image
+            src={sectionBackgroundSrc!}
+            alt=""
+            fill
+            sizes="100vw"
+            className="arch-atlas__atmosphere-image"
+            quality={100}
+            /* Serve original bytes — no optimizer recompress/resize derivative */
+            unoptimized
+            priority
+          />
+          <div className="arch-atlas__atmosphere-veil" />
+        </div>
 
-            {perfumer?.quote ? (
-              <aside className="arch-insight">
-                {perfumer.portraitSrc ? (
-                  <div className="arch-insight__portrait">
-                    <Image
-                      src={perfumer.portraitSrc}
-                      alt=""
-                      width={72}
-                      height={72}
-                    />
-                  </div>
-                ) : null}
-                <div className="arch-insight__body">
-                  <p className="arch-insight__quote">“{perfumer.quote}”</p>
-                  <p className="arch-insight__credit">{perfumer.name}</p>
-                </div>
-              </aside>
-            ) : null}
-          </header>
+        <div className="arch-atlas__viewport">
+          <div className="arch-atlas__canvas">
+            <div className="arch-atlas__visual">
+              {/*
+               * Stage wraps media + annotations. Annotations live OUTSIDE the
+               * aspect-ratio media box so edge labels/leaders are never clipped.
+               */}
+              <div className="arch-atlas__stage">
+                <div
+                  className="arch-atlas__media"
+                  data-exploring={exploreId ? "true" : "false"}
+                  style={
+                    {
+                      "--still-life-src": `url("${stillLifeSrc}")`,
+                    } as CSSProperties
+                  }
+                  onClick={(e) => {
+                    if (!isComposition) return;
+                    if (e.target === e.currentTarget) setExploreId(null);
+                  }}
+                >
+                  <div className="arch-atlas__bloom" aria-hidden="true" />
+                  <Image
+                    src={stillLifeSrc}
+                    alt={architecture?.stillLifeAlt ?? ""}
+                    fill
+                    sizes="(max-width: 900px) 100vw, 68vw"
+                    className="arch-atlas__image"
+                    quality={100}
+                    /* Highest available source as-is — avoid optimizer derivatives */
+                    unoptimized
+                    priority
+                  />
 
-          <div className="arch-exhibit">
-            <MaterialStack
-              stages={stages}
-              signatureNotes={signatureNotes}
-              visible={visible}
-            />
+                  <PhaseEmphasis
+                    highlights={highlights}
+                    uid={uid}
+                    mode={emphasisMode}
+                  />
 
-            <ol className="arch-rail">
-              {stages.map((stage, index) => {
-                const [featured, ...supporting] = stage.notes;
-                if (!featured) return null;
+                  <CompositionSweep active={sweeping} />
 
-                return (
-                  <li
-                    key={stage.id}
-                    className="arch-rail__item"
-                    data-stage={stage.id}
-                    style={{ "--rail-i": index } as CSSProperties}
-                  >
-                    <span className="arch-rail__index" aria-hidden="true">
-                      {String(index + 1).padStart(2, "0")}
-                    </span>
-                    <div className="arch-rail__copy">
-                      <h3 className="arch-rail__label">{stage.label}</h3>
-                      <p className="arch-rail__featured">{featured.name}</p>
-                      {stage.reading ? (
-                        <p className="arch-rail__reading">{stage.reading}</p>
-                      ) : null}
-                      {supporting.length ? (
-                        <ul className="arch-rail__notes">
-                          {supporting.map((note) => (
-                            <li key={`${stage.id}-${note.name}`}>
-                              {note.name}
-                            </li>
-                          ))}
-                        </ul>
-                      ) : null}
+                  <div className="arch-atlas__dissolve" aria-hidden="true" />
+
+                  {/* COMPOSICIÓN explore hotspots */}
+                  {isComposition ? (
+                    <div className="arch-atlas__hotspots">
+                      {[...flatNotes]
+                        .filter((flat) => flat.note.map)
+                        .sort((a, b) => {
+                          const ma = resolveMap(a.note.map!);
+                          const mb = resolveMap(b.note.map!);
+                          return (
+                            ma.hotspotW * ma.hotspotH - mb.hotspotW * mb.hotspotH
+                          );
+                        })
+                        .map((flat) => {
+                          const m = resolveMap(flat.note.map!);
+                          const active = exploreId === flat.id;
+                          return (
+                            <button
+                              key={flat.id}
+                              type="button"
+                              className="arch-atlas__hotspot"
+                              data-active={active ? "true" : "false"}
+                              aria-label={flat.note.name}
+                              style={
+                                {
+                                  left: `${m.hotspotX}%`,
+                                  top: `${m.hotspotY}%`,
+                                  width: `${m.hotspotW}%`,
+                                  height: `${m.hotspotH}%`,
+                                } as CSSProperties
+                              }
+                              onPointerEnter={(e) => {
+                                if (e.pointerType === "mouse") {
+                                  setExploreId(flat.id);
+                                }
+                              }}
+                              onPointerLeave={(e) => {
+                                if (e.pointerType === "mouse") {
+                                  setExploreId((cur) =>
+                                    cur === flat.id ? null : cur,
+                                  );
+                                }
+                              }}
+                              onFocus={() => setExploreId(flat.id)}
+                              onBlur={() =>
+                                setExploreId((cur) =>
+                                  cur === flat.id ? null : cur,
+                                )
+                              }
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (e.nativeEvent instanceof PointerEvent) {
+                                  const type = e.nativeEvent.pointerType;
+                                  if (type === "touch" || type === "pen") {
+                                    setExploreId((cur) =>
+                                      cur === flat.id ? null : flat.id,
+                                    );
+                                    return;
+                                  }
+                                }
+                                if (
+                                  window.matchMedia("(hover: none)").matches
+                                ) {
+                                  setExploreId((cur) =>
+                                    cur === flat.id ? null : flat.id,
+                                  );
+                                  return;
+                                }
+                                setExploreId(flat.id);
+                              }}
+                            />
+                          );
+                        })}
                     </div>
-                  </li>
-                );
-              })}
-            </ol>
+                  ) : null}
+                </div>
+
+                <ul className="arch-atlas__annotations" aria-hidden="true">
+                  {flatNotes.map((flat) => (
+                    <Annotation
+                      key={flat.id}
+                      note={flat.note}
+                      reveal={revealFor(flat)}
+                      featured={
+                        !isComposition && flat.note.name === signatureName
+                      }
+                      index={flat.index}
+                    />
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            <aside className="arch-atlas__panel">
+              <header className="arch-atlas__panel-head">
+                <h2 id="architecture-title" className="arch-atlas__meta">
+                  <span className="arch-atlas__meta-index">{index}</span>
+                  <span className="arch-atlas__meta-rule" aria-hidden="true" />
+                  <span className="arch-atlas__meta-eyebrow">{eyebrow}</span>
+                </h2>
+
+                <div
+                  className="arch-atlas__tabs"
+                  role="tablist"
+                  aria-label="Fases olfativas"
+                  id={tablistId}
+                >
+                  {PHASE_NAV.map((item) => {
+                    const selected = item.id === phase;
+                    const passed =
+                      item.id !== "composition" &&
+                      phase !== "composition" &&
+                      phaseIndex(item.id) < phaseIndex(phase);
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        role="tab"
+                        id={`${tablistId}-${item.id}`}
+                        aria-selected={selected}
+                        className="arch-atlas__tab"
+                        data-active={selected ? "true" : "false"}
+                        data-passed={passed ? "true" : "false"}
+                        onClick={() => selectPhase(item.id)}
+                      >
+                        <span className="arch-atlas__tab-index">
+                          {item.index}
+                        </span>
+                        <span className="arch-atlas__tab-label">
+                          {item.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </header>
+
+              <div
+                className="arch-atlas__body"
+                role="tabpanel"
+                aria-labelledby={`${tablistId}-${phase}`}
+                style={
+                  {
+                    "--note-slots": maxNotes,
+                  } as CSSProperties
+                }
+              >
+                <div
+                  key={panelTick}
+                  className="arch-atlas__body-inner"
+                  data-kind={isComposition ? "composition" : "phase"}
+                >
+                  <p className="arch-atlas__phase-line">
+                    <span className="arch-atlas__phase-index">
+                      {navMeta?.index}
+                    </span>
+                    <span className="arch-atlas__phase-sep" aria-hidden="true">
+                      —
+                    </span>
+                    <span className="arch-atlas__phase-label">
+                      {navMeta?.label}
+                    </span>
+                  </p>
+
+                  {isComposition ? (
+                    <>
+                      <p className="arch-atlas__traits arch-atlas__traits--reading">
+                        {composition?.reading ??
+                          "Tres movimientos de una sola composición."}
+                      </p>
+                      {composition?.taxonomy ? (
+                        <p className="arch-atlas__taxonomy">
+                          {composition.taxonomy}
+                        </p>
+                      ) : null}
+                      <ul
+                        className="arch-atlas__note-list arch-atlas__note-list--empty"
+                        aria-hidden="true"
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <p className="arch-atlas__traits">{traits ?? "\u00a0"}</p>
+                      <ul className="arch-atlas__note-list">
+                        {noteList.map((note) => (
+                          <li
+                            key={note.name}
+                            data-featured={
+                              note.name === signatureName ? "true" : "false"
+                            }
+                          >
+                            {note.name}
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
+                </div>
+              </div>
+            </aside>
           </div>
         </div>
       </div>

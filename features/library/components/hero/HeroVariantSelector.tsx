@@ -89,7 +89,23 @@ export function HeroVariantSelector({
                   |
                 </span>
               ) : null}
-              {isActive ? (
+              {onSelect ? (
+                <button
+                  type="button"
+                  className={
+                    isActive
+                      ? "hero-variants__current"
+                      : "hero-variants__link"
+                  }
+                  aria-current={isActive ? "true" : undefined}
+                  title={full}
+                  onClick={() => {
+                    if (!isActive) onSelect(member);
+                  }}
+                >
+                  {label}
+                </button>
+              ) : isActive ? (
                 <span
                   className="hero-variants__current"
                   aria-current="true"
@@ -97,15 +113,6 @@ export function HeroVariantSelector({
                 >
                   {label}
                 </span>
-              ) : onSelect ? (
-                <button
-                  type="button"
-                  className="hero-variants__link"
-                  title={full}
-                  onClick={() => onSelect(member)}
-                >
-                  {label}
-                </button>
               ) : member.href ? (
                 <Link
                   href={member.href}

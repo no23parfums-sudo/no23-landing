@@ -9,10 +9,12 @@ import {
 import { useState, type CSSProperties } from "react";
 import type {
   CollectionMember,
+  NotesChapterPresentation,
   PerfumePresentation,
 } from "../../lib/presentation";
 import { EditorialSentence } from "./EditorialSentence";
-import { HeroChapterIndex } from "./HeroChapterIndex";
+import { HeroChapterReveal } from "./HeroChapterReveal";
+import { HeroFirmaFilm } from "./HeroFirmaFilm";
 import { HeroTransition } from "./HeroTransition";
 import { HeroVariantSelector } from "./HeroVariantSelector";
 
@@ -21,6 +23,14 @@ export type PerfumeHeroProps = {
   concentration?: string | null;
   year?: number | null;
   commercialStatus?: string | null;
+  /** Active concentration/record slug (family swap) */
+  activeSlug?: string | null;
+  onActiveSlugChange?: (slug: string) => void;
+  /**
+   * Chapter 02 intro for the ACTIVE record only.
+   * Must not fall back to the page presentation when another concentration is selected.
+   */
+  notesChapter?: NotesChapterPresentation | null;
 };
 
 const easeOut = [0.22, 1, 0.36, 1] as const;
@@ -54,8 +64,15 @@ const plateTransition = {
   ease: easeOut,
 };
 
-const copyTransition = {
-  duration: 0.4,
+/** Left identity (catalog · mark · title · descriptor · copy) — readable with the plate */
+const leftContentTransition = {
+  duration: 0.45,
+  ease: easeOut,
+};
+
+/** Right metadata rail — keeps the slower dissolve for now */
+const metaTransition = {
+  duration: 0.75,
   ease: easeOut,
 };
 
@@ -79,6 +96,9 @@ export function PerfumeHero({
   presentation,
   concentration,
   year,
+  activeSlug,
+  onActiveSlugChange,
+  notesChapter = null,
 }: PerfumeHeroProps) {
   const reduceMotion = useReducedMotion();
   const {
@@ -100,17 +120,28 @@ export function PerfumeHero({
   } = presentation;
 
   const variantMembers = variants ?? collection?.members ?? [];
-  const [selectedSlug, setSelectedSlug] = useState<string | null>(() =>
+  const [uncontrolledSlug, setUncontrolledSlug] = useState<string | null>(() =>
     resolveDefaultSlug(variantMembers, concentration),
   );
+  const selectedSlug = activeSlug ?? uncontrolledSlug;
+  const setSelectedSlug = (slug: string) => {
+    onActiveSlugChange?.(slug);
+    if (activeSlug === undefined) setUncontrolledSlug(slug);
+  };
 
   const activeMember =
     variantMembers.find((member) => member.slug === selectedSlug) ??
     variantMembers.find((member) => member.current) ??
     null;
 
+  const hasChapterReveal = Boolean(
+    notesChapter &&
+      (notesChapter.revealInHero || notesChapter.title || notesChapter.eyebrow),
+  );
+
   const activeEditorialSrc =
     activeMember?.editorialSrc ?? editorialSrc ?? null;
+  const activeFirmaFilmSrc = activeMember?.firmaFilmSrc ?? null;
   const activeFocus = activeMember?.heroFocus ?? "50% 48%";
   const activeDescriptor =
     activeMember?.descriptor ?? heroTagline ?? null;
@@ -139,7 +170,10 @@ export function PerfumeHero({
   );
 
   return (
-    <HeroTransition>
+    <HeroTransition
+      hasChapterReveal={hasChapterReveal}
+      hasFirmaFilm={Boolean(activeFirmaFilmSrc)}
+    >
       {({ pinRef, entered }) => (
         <section
           ref={pinRef}
@@ -190,6 +224,9 @@ export function PerfumeHero({
                         priority
                         quality={88}
                       />
+                      {activeFirmaFilmSrc ? (
+                        <HeroFirmaFilm src={activeFirmaFilmSrc} />
+                      ) : null}
                     </div>
                   </motion.div>
                 </AnimatePresence>
@@ -219,102 +256,101 @@ export function PerfumeHero({
               <span className="perfume-hero__doc-plane-edge" />
             </div>
 
+            {/* Beat 2 — active-record Chapter 02 only (no cross-slug fallback) */}
+            {hasChapterReveal ? (
+              <div className="perfume-hero__chapter-reveal-slot">
+                <HeroChapterReveal chapter={notesChapter} />
+              </div>
+            ) : null}
+
             <motion.div
               className="perfume-hero__stage"
               variants={reduceMotion ? undefined : stageVariants}
               initial={reduceMotion ? false : "hidden"}
               animate={entered || reduceMotion ? "show" : "hidden"}
             >
+              {/*
+                Chapter rail is page-fixed (PerfumeChapterRail) so 01→04
+                persists through cream/dark document sections. Keep the
+                grid slot for layout alignment only.
+              */}
               <motion.div
-                className="perfume-hero__chapters-slot"
+                className="perfume-hero__chapters-slot perfume-hero__chapters-slot--spacer"
                 variants={itemVariants}
-              >
-                <HeroChapterIndex current="01" />
-              </motion.div>
+                aria-hidden="true"
+              />
 
               <motion.div
                 className="perfume-hero__identity"
                 variants={groupVariants}
               >
                 <div className="perfume-hero__identity-inner">
-                  {activeCatalogRef ? (
-                    <motion.div
-                      className="perfume-hero__catalog-slot"
-                      variants={itemVariants}
-                    >
-                      <AnimatePresence mode="wait" initial={false}>
-                        <motion.span
-                          key={`catalog-${copyKey}`}
-                          className="perfume-hero__catalog"
-                          initial={reduceMotion ? false : { opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={reduceMotion ? undefined : { opacity: 0 }}
-                          transition={
-                            reduceMotion
-                              ? { duration: 0.15 }
-                              : copyTransition
-                          }
-                        >
-                          {activeCatalogRef}
-                        </motion.span>
-                      </AnimatePresence>
-                    </motion.div>
-                  ) : null}
-
-                  {brandLogoSrc ? (
-                    <motion.div variants={itemVariants}>
-                      <Image
-                        className="perfume-hero__brand"
-                        src={brandLogoSrc}
-                        alt={brandName}
-                        width={160}
-                        height={48}
-                        priority
-                      />
-                    </motion.div>
-                  ) : brandName ? (
-                    <motion.span
-                      className="perfume-hero__brand-fallback"
-                      variants={itemVariants}
-                    >
-                      {brandName}
-                    </motion.span>
-                  ) : null}
-
-                  <motion.h1
-                    className="perfume-hero__name"
-                    data-stacked={titleLines.length > 1 ? "true" : "false"}
-                    variants={itemVariants}
-                  >
-                    {titleLines.map((line) => (
-                      <span key={line} className="perfume-hero__name-line">
-                        {line}
-                      </span>
-                    ))}
-                  </motion.h1>
-
                   <motion.div
-                    className="perfume-hero__copy-slot"
+                    className="perfume-hero__left-slot"
                     variants={itemVariants}
                   >
-                    <AnimatePresence mode="wait" initial={false}>
+                    <AnimatePresence mode="sync" initial={false}>
                       <motion.div
-                        key={`copy-${copyKey}`}
+                        key={`left-${copyKey}`}
+                        className="perfume-hero__left-content"
                         initial={reduceMotion ? false : { opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={reduceMotion ? undefined : { opacity: 0 }}
                         transition={
                           reduceMotion
                             ? { duration: 0.15 }
-                            : copyTransition
+                            : leftContentTransition
                         }
                       >
-                        {activeDescriptor ? (
-                          <p className="perfume-hero__tagline">
-                            {activeDescriptor}
-                          </p>
+                        {activeCatalogRef ? (
+                          <div className="perfume-hero__catalog-slot">
+                            <span className="perfume-hero__catalog">
+                              {activeCatalogRef}
+                            </span>
+                          </div>
                         ) : null}
-                        <EditorialSentence>{activeSummary}</EditorialSentence>
+
+                        {brandLogoSrc ? (
+                          <Image
+                            className="perfume-hero__brand"
+                            src={brandLogoSrc}
+                            alt={brandName}
+                            width={160}
+                            height={48}
+                            priority
+                          />
+                        ) : brandName ? (
+                          <span className="perfume-hero__brand-fallback">
+                            {brandName}
+                          </span>
+                        ) : null}
+
+                        <h1
+                          className="perfume-hero__name"
+                          data-stacked={
+                            titleLines.length > 1 ? "true" : "false"
+                          }
+                        >
+                          {titleLines.map((line) => (
+                            <span
+                              key={line}
+                              className="perfume-hero__name-line"
+                            >
+                              {line}
+                            </span>
+                          ))}
+                        </h1>
+
+                        <div className="perfume-hero__copy-slot">
+                          {activeDescriptor ? (
+                            <p className="perfume-hero__tagline">
+                              {activeDescriptor}
+                            </p>
+                          ) : null}
+                          <EditorialSentence>
+                            {activeSummary}
+                          </EditorialSentence>
+                        </div>
                       </motion.div>
                     </AnimatePresence>
                   </motion.div>
@@ -350,11 +386,11 @@ export function PerfumeHero({
               )}
 
               {hasMetaRail || variantMembers.length ? (
-                <motion.aside
-                  className="hero-rail"
+                <motion.div
+                  className="perfume-hero__rail-slot"
                   variants={itemVariants}
-                  aria-label="Ficha técnica"
                 >
+                  <aside className="hero-rail" aria-label="Ficha técnica">
                   <HeroVariantSelector
                     members={variantMembers}
                     concentration={
@@ -370,7 +406,7 @@ export function PerfumeHero({
                   />
 
                   <div className="hero-rail__meta-slot">
-                    <AnimatePresence mode="wait" initial={false}>
+                    <AnimatePresence mode="sync" initial={false}>
                       <motion.dl
                         key={`meta-${copyKey}`}
                         className="hero-rail__meta"
@@ -380,7 +416,7 @@ export function PerfumeHero({
                         transition={
                           reduceMotion
                             ? { duration: 0.15 }
-                            : copyTransition
+                            : metaTransition
                         }
                       >
                         {activePerfumer ? (
@@ -410,7 +446,8 @@ export function PerfumeHero({
                       </motion.dl>
                     </AnimatePresence>
                   </div>
-                </motion.aside>
+                  </aside>
+                </motion.div>
               ) : null}
             </motion.div>
           </div>

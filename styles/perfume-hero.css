@@ -4,9 +4,13 @@
 .library-shell.library-shell--perfume {
   background: var(--atm-document);
   --hero-progress: 0;
+  --firma-progress: 0;
   --hero-photo-fade: 0;
   --hero-ui-fade: 0;
   --hero-doc-rise: 0;
+  --hero-chapter-reveal: 0;
+  --firma-film-opacity: 0;
+  --firma-static-opacity: 1;
   --hero-depth-bg: 0vh;
   --hero-depth-ui: 0vh;
 }
@@ -78,12 +82,11 @@
 .perfume-hero-scroll {
   position: relative;
   /*
-   * Pin travel must only cover the layered handoff.
-   * Oversizing this (previously ~58vh) left a full empty ivory
-   * viewport after the plane covered the hero and before Ch02 entered.
+   * Pin travel ≈ 1.35 viewport heights for three readable beats.
+   * Native scroll; fast users can still pass through.
    */
-  height: calc(100svh + 36vh);
-  min-height: calc(640px + 36vh);
+  height: calc(100svh + 135vh);
+  min-height: calc(640px + 135vh);
   background: var(--atm-bg);
 }
 
@@ -118,15 +121,21 @@
   opacity: 0.35;
 }
 
-/* Product stage — stays rich early; recesses only as the archive arrives */
+/* Product stage — holds through Beats 1–2; exits under the notes layer */
 .perfume-hero__atmosphere {
   position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
-  opacity: calc(1 - var(--hero-photo-fade) * 0.28);
-  transform: scale(calc(1.01 - var(--hero-progress) * 0.01))
+  /*
+   * Stay visually present until --hero-photo-fade releases it.
+   * No clip-path yield: clipping exposed empty hero bg between the
+   * clipped photo edge and the rising document (blank-frame bug).
+   * The content-bearing document overlays this layer instead.
+   */
+  opacity: calc(1 - var(--hero-photo-fade) * 0.96);
+  transform: scale(calc(1.01 - var(--hero-photo-fade) * 0.025))
     translate3d(0, var(--hero-depth-bg), 0);
   transform-origin: 55% 48%;
   will-change: transform, opacity;
@@ -144,12 +153,42 @@
   width: 100%;
 }
 
+/* Static Hero plate — ownership from --firma-progress via HeroTransition */
+.perfume-hero__atmosphere-inner > img {
+  opacity: var(--firma-static-opacity, 1);
+}
+
 .perfume-hero[data-has-editorial="true"] .perfume-hero__atmosphere img {
   object-fit: cover;
   /* Preserve photographic framing; override per-variant via --hero-focus */
   object-position: var(--hero-focus, 50% 48%);
   width: 100%;
   height: 100%;
+}
+
+/* Film A — Firma-only. Opacity driven by --firma-film-opacity (JS handoff). */
+.perfume-hero__atmosphere-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: var(--hero-focus, 50% 48%);
+  border: 0;
+  pointer-events: none;
+  opacity: var(--firma-film-opacity, 0);
+  visibility: hidden;
+  /* Subtle resolve as film takes ownership — not a glow */
+  filter: brightness(calc(0.94 + var(--firma-film-opacity, 0) * 0.06));
+}
+
+.perfume-hero__atmosphere-video[data-active="true"] {
+  visibility: visible;
+}
+
+.perfume-hero__atmosphere-video[data-ready="false"] {
+  opacity: 0;
+  visibility: hidden;
 }
 
 .perfume-hero[data-has-editorial="false"] .perfume-hero__atmosphere-inner {
@@ -163,10 +202,17 @@
   position: absolute;
   width: 1px;
   height: 1px;
+  margin: -1px;
+  padding: 0;
   overflow: hidden;
   clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  border: 0;
   white-space: nowrap;
   pointer-events: none;
+  /* Park off-canvas so a failed preload can never paint a 1×1 icon at 0,0 */
+  left: -10000px;
+  top: 0;
 }
 
 .perfume-hero__grain {
@@ -206,8 +252,9 @@
 }
 
 /*
- * Ivory editorial plane — full sheet translating up over the cover.
- * Physical document edge: soft lip + cast shadow onto the cinematic cover.
+ * Empty cream plane — only when the document is NOT the content carrier.
+ * With Signature Notes (data-content-plane="notes"), the document itself
+ * rises with its materials; this blank sheet stays hidden.
  */
 .perfume-hero__doc-plane {
   position: absolute;
@@ -215,13 +262,16 @@
   z-index: 5;
   pointer-events: none;
   background: var(--atm-document);
-  transform: translate3d(0, calc((1 - var(--hero-doc-rise)) * 100%), 0);
+  clip-path: inset(calc((1 - var(--hero-doc-rise)) * 100%) 0 0 0);
   box-shadow:
-    0 -1px 0 rgba(255, 255, 255, calc(var(--hero-doc-rise) * 0.35)),
-    0 -2px 0 rgba(20, 18, 14, calc(var(--hero-doc-rise) * 0.08)),
-    0 -14px 28px rgba(0, 0, 0, calc(var(--hero-doc-rise) * 0.38)),
-    0 -36px 64px rgba(0, 0, 0, calc(var(--hero-doc-rise) * 0.22));
-  will-change: transform;
+    0 -1px 0 rgba(255, 255, 255, calc(var(--hero-doc-rise) * 0.28)),
+    0 -18px 36px rgba(0, 0, 0, calc(var(--hero-doc-rise) * 0.28)),
+    0 -40px 72px rgba(0, 0, 0, calc(var(--hero-doc-rise) * 0.16));
+  will-change: clip-path;
+}
+
+.library-shell--perfume[data-content-plane="notes"] .perfume-hero__doc-plane {
+  display: none;
 }
 
 .perfume-hero__doc-plane::after {
@@ -236,18 +286,120 @@
 
 .perfume-hero__doc-plane-edge {
   position: absolute;
-  top: -32px;
+  top: 0;
   left: 0;
   right: 0;
-  height: 32px;
+  height: 64px;
   background: linear-gradient(
     180deg,
     transparent 0%,
-    rgba(0, 0, 0, 0.14) 45%,
-    color-mix(in srgb, var(--atm-document) 55%, transparent) 78%,
+    rgba(0, 0, 0, 0.2) 24%,
+    color-mix(in srgb, var(--atm-document) 35%, transparent) 58%,
     var(--atm-document) 100%
   );
-  opacity: calc(0.35 + var(--hero-doc-rise) * 0.65);
+  opacity: calc(var(--hero-doc-rise) * 0.95);
+  transform: translate3d(0, -1px, 0);
+}
+
+/*
+ * Beat 2 — Chapter 02 typography on the dark photographic field.
+ * Aligns with the Hero identity column (editorial left, not centered).
+ */
+.perfume-hero__chapter-reveal-slot {
+  position: absolute;
+  z-index: 4;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: grid;
+  grid-template-columns: 2.75rem minmax(16rem, 22rem) minmax(0, 1fr) minmax(
+      11.5rem,
+      14rem
+    );
+  align-items: center;
+  padding: calc(96px + 1.5vh) var(--pad) 5.5vh;
+  gap: clamp(14px, 2vw, 28px);
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  pointer-events: none;
+  /* Scroll-linked — no timed transition (avoids snap / lag) */
+  opacity: var(--hero-chapter-reveal);
+  transform: translate3d(
+    0,
+    calc((1 - var(--hero-chapter-reveal)) * 1.4vh),
+    0
+  );
+  will-change: opacity, transform;
+}
+
+.perfume-hero__chapter-reveal-slot .hero-chapter-reveal {
+  grid-column: 2;
+  max-width: 20.5rem;
+}
+
+/*
+ * Firma copy as one editorial composition — soft stagger from
+ * --firma-progress (eyebrow 20–40%, title 22–48%, body 28–55%).
+ */
+.hero-chapter-reveal__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.55rem;
+  margin: 0 0 1.15rem;
+  font-size: 10px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: color-mix(in srgb, var(--atm-fg) 52%, transparent);
+  opacity: clamp(
+    0,
+    calc((var(--firma-progress, 0) - 0.2) / 0.2),
+    1
+  );
+}
+
+.hero-chapter-reveal__rule {
+  letter-spacing: 0;
+  opacity: 0.55;
+}
+
+.hero-chapter-reveal__eyebrow {
+  letter-spacing: 0.22em;
+}
+
+.hero-chapter-reveal__title {
+  margin: 0;
+  font-family: var(--font-playfair), "Playfair Display", serif;
+  font-weight: 500;
+  font-size: clamp(34px, 3.6vw, 48px);
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  color: var(--atm-fg);
+  max-width: 14ch;
+  opacity: clamp(
+    0,
+    calc((var(--firma-progress, 0) - 0.22) / 0.26),
+    1
+  );
+}
+
+.hero-chapter-reveal__lede {
+  margin: 1.25rem 0 0;
+  max-width: 19rem;
+  font-size: 13px;
+  line-height: 1.7;
+  font-weight: 300;
+  letter-spacing: 0.01em;
+  color: color-mix(in srgb, var(--atm-fg) 58%, transparent);
+  opacity: clamp(
+    0,
+    calc((var(--firma-progress, 0) - 0.28) / 0.27),
+    1
+  );
 }
 
 /* Three zones: chapters · identity · rail (product lives in atmosphere) */
@@ -283,13 +435,73 @@
   min-width: 0;
 }
 
-/* Chapter index — slot is the grid child so centering survives Motion wrappers */
+/* Chapter index slot — layout spacer; live rail is page-fixed */
 .perfume-hero__chapters-slot {
   align-self: center;
   justify-self: center;
-  opacity: calc(1 - var(--hero-ui-fade) * 0.95);
-  transform: translate3d(0, calc(var(--hero-ui-fade) * -2.4vh), 0);
-  will-change: transform, opacity;
+  width: 1.65rem;
+}
+
+.perfume-hero__chapters-slot--spacer {
+  pointer-events: none;
+}
+
+/*
+ * Persistent global chapter rail — independent UI layer.
+ * Stable X; never shifts between cream/dark sections.
+ * --rail-safe reserves horizontal clearance for annotations.
+ */
+:root {
+  /* Narrow fixed rail + annotation clearance (viewport-left safe zone) */
+  --rail-safe: 3.75rem;
+}
+
+.perfume-chapter-rail {
+  position: fixed;
+  left: calc((var(--rail-safe) - 1.65rem) / 2);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 60;
+  width: 1.65rem;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Temporarily yield left space to Architecture annotations */
+.perfume-chapter-rail[data-concealed="true"] {
+  opacity: 0;
+}
+
+.perfume-chapter-rail[data-surface="dark"] .hero-chapters__item {
+  color: color-mix(in srgb, #ebe4d6 28%, transparent);
+}
+
+.perfume-chapter-rail[data-surface="dark"] .hero-chapters__item--current {
+  color: #f0e9db;
+  border-color: color-mix(in srgb, #f0e9db 40%, transparent);
+}
+
+.perfume-chapter-rail[data-surface="cream"] .hero-chapters__item {
+  color: color-mix(in srgb, #171716 28%, transparent);
+}
+
+.perfume-chapter-rail[data-surface="cream"] .hero-chapters__item--current {
+  color: #171716;
+  border-color: color-mix(in srgb, #171716 38%, transparent);
+}
+
+@media (max-width: 900px) {
+  :root {
+    --rail-safe: 2.4rem;
+  }
+
+  .perfume-chapter-rail {
+    left: calc((var(--rail-safe) - 1.45rem) / 2);
+    width: 1.45rem;
+    transform: translateY(-50%) scale(0.9);
+    transform-origin: left center;
+  }
 }
 
 .hero-chapters {
@@ -314,12 +526,16 @@
   letter-spacing: 0.08em;
   font-weight: 500;
   color: color-mix(in srgb, var(--atm-fg) 32%, transparent);
+  border: 1px solid transparent;
+  border-radius: 50%;
+  transition:
+    color 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .hero-chapters__item--current {
   color: var(--atm-fg);
-  border: 1px solid color-mix(in srgb, var(--atm-fg) 42%, transparent);
-  border-radius: 50%;
+  border-color: color-mix(in srgb, var(--atm-fg) 42%, transparent);
 }
 
 /* Identity column — shared left edge, tighter catalog→logo→title stack */
@@ -329,9 +545,21 @@
   max-width: 22rem;
   align-self: center;
   justify-self: start;
-  opacity: calc(1 - var(--hero-ui-fade) * 0.96);
+  /* Fully extinguish — no residual title/copy under Chapter 02 */
+  opacity: calc(1 - var(--hero-ui-fade));
   transform: translate3d(0, calc(var(--hero-ui-fade) * -2.8vh), 0);
   will-change: transform, opacity;
+}
+
+/*
+ * Document phase: hard-hide Hero copy (cream owns).
+ * Chapter/retreat: continuous dissolve via --hero-ui-fade only —
+ * no binary snap that creates a Hero plateau then a page flip.
+ */
+.library-shell--perfume[data-hero-phase="document"] .perfume-hero__identity,
+.library-shell--perfume[data-hero-phase="document"] .hero-rail {
+  opacity: 0;
+  visibility: hidden;
 }
 
 .perfume-hero__identity-inner {
@@ -340,6 +568,20 @@
   align-items: flex-start;
   width: 100%;
   max-width: 20.5rem;
+}
+
+/* Stack enter/exit in one cell so left sync crossfade doesn't reflow */
+.perfume-hero__left-slot {
+  display: grid;
+  width: 100%;
+}
+
+.perfume-hero__left-content {
+  grid-area: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
 }
 
 .perfume-hero__catalog-slot {
@@ -446,16 +688,22 @@
 }
 
 /* Right metadata rail — quiet, precise; height reserved for wrap variance */
-.hero-rail {
+/* Motion entrance lives on the slot; scroll fade lives on the inner aside */
+.perfume-hero__rail-slot {
   align-self: center;
   justify-self: end;
   width: 100%;
   max-width: 13.5rem;
+}
+
+.hero-rail {
+  width: 100%;
   min-height: 29.1rem;
   display: flex;
   flex-direction: column;
   gap: 1.55rem;
-  opacity: calc(1 - var(--hero-ui-fade) * 0.96);
+  /* Fully extinguish with Beat 1 — no metadata ghost under Chapter 02 */
+  opacity: calc(1 - var(--hero-ui-fade));
   transform: translate3d(0, calc(var(--hero-ui-fade) * -2.6vh), 0);
   will-change: transform, opacity;
 }
@@ -463,6 +711,14 @@
 .hero-rail__meta-slot {
   position: relative;
   min-height: 17.1rem;
+}
+
+.hero-rail__meta-slot > *:not(:only-child) {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  width: 100%;
 }
 
 .hero-rail__meta {
@@ -557,28 +813,42 @@
   line-height: 1.3;
 }
 
+.hero-variants--rail .hero-variants__current,
+.hero-variants--rail .hero-variants__link {
+  border-bottom: 1px solid transparent;
+  padding-bottom: 2px;
+  transition:
+    color 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 .hero-variants--rail .hero-variants__current {
   color: color-mix(in srgb, var(--atm-fg) 88%, transparent);
-  border-bottom: 1px solid color-mix(in srgb, var(--atm-fg) 36%, transparent);
-  padding-bottom: 2px;
+  border-bottom-color: color-mix(in srgb, var(--atm-fg) 36%, transparent);
 }
 
 .hero-variants--rail .hero-variants__link {
   color: color-mix(in srgb, var(--atm-fg) 42%, transparent);
-  transition: color 0.3s ease;
 }
 
-button.hero-variants__link {
+button.hero-variants__link,
+button.hero-variants__current {
   appearance: none;
   background: none;
-  border: 0;
-  padding: 0;
+  border-top: 0;
+  border-left: 0;
+  border-right: 0;
+  padding: 0 0 2px;
   margin: 0;
   font: inherit;
   letter-spacing: inherit;
   text-transform: inherit;
   cursor: pointer;
   text-align: inherit;
+}
+
+button.hero-variants__current {
+  cursor: default;
 }
 
 .hero-variants--rail .hero-variants__link:hover {
@@ -802,18 +1072,22 @@ button.hero-variants__link {
   .perfume-hero__atmosphere,
   .perfume-hero__bottle,
   .perfume-hero__stage,
-  .perfume-hero__doc-plane {
+  .perfume-hero__doc-plane,
+  .perfume-hero__chapter-reveal-slot {
     transform: none;
+    clip-path: none;
     will-change: auto;
   }
 
-  .perfume-hero__doc-plane {
+  .perfume-hero__doc-plane,
+  .perfume-hero__chapter-reveal-slot {
     display: none;
   }
 }
 
 @media (max-width: 1100px) {
-  .perfume-hero__stage {
+  .perfume-hero__stage,
+  .perfume-hero__chapter-reveal-slot {
     grid-template-columns: 2.75rem minmax(0, 1fr) minmax(10rem, 13rem);
   }
 
@@ -829,8 +1103,8 @@ button.hero-variants__link {
 
 @media (max-width: 900px) {
   .perfume-hero-scroll {
-    height: calc(100svh + 40vh);
-    min-height: calc(600px + 40vh);
+    height: calc(100svh + 110vh);
+    min-height: calc(600px + 110vh);
   }
 
   .perfume-hero {
@@ -838,12 +1112,17 @@ button.hero-variants__link {
     min-height: 600px;
   }
 
-  .perfume-hero__stage {
+  .perfume-hero__stage,
+  .perfume-hero__chapter-reveal-slot {
     grid-template-columns: 1fr;
     grid-template-rows: auto 1fr auto;
     align-items: end;
     padding: calc(88px + 1vh) var(--pad) 6vh;
     gap: 1.25rem;
+  }
+
+  .perfume-hero__chapter-reveal-slot .hero-chapter-reveal {
+    grid-column: 1;
   }
 
   .hero-chapters {

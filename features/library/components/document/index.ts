@@ -8,3 +8,7 @@ export { HistoryTimeline } from "./HistoryTimeline";
 export { PerformanceSection } from "./PerformanceSection";
 export { RelatedFragrances } from "./RelatedFragrances";
 export { CollectionLine } from "./CollectionLine";
+export { LineageSection } from "./LineageSection";
+export { AffinitiesSection } from "./AffinitiesSection";
+export { PerfumeActions } from "./PerfumeActions";
+export { No23AuthGate } from "./No23AuthGate";
