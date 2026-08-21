@@ -17,6 +17,7 @@ import { HeroChapterReveal } from "./HeroChapterReveal";
 import { HeroFirmaFilm } from "./HeroFirmaFilm";
 import { HeroTransition } from "./HeroTransition";
 import { HeroVariantSelector } from "./HeroVariantSelector";
+import { SplitHeroGallery } from "./SplitHeroGallery";
 
 export type PerfumeHeroProps = {
   presentation: PerfumePresentation;
@@ -31,6 +32,8 @@ export type PerfumeHeroProps = {
    * Must not fall back to the page presentation when another concentration is selected.
    */
   notesChapter?: NotesChapterPresentation | null;
+  /** Prototype split — still Hero, no Firma film / cinematic runway. */
+  chapterLayout?: "current" | "split";
 };
 
 const easeOut = [0.22, 1, 0.36, 1] as const;
@@ -99,6 +102,7 @@ export function PerfumeHero({
   activeSlug,
   onActiveSlugChange,
   notesChapter = null,
+  chapterLayout = "current",
 }: PerfumeHeroProps) {
   const reduceMotion = useReducedMotion();
   const {
@@ -123,6 +127,19 @@ export function PerfumeHero({
   const [uncontrolledSlug, setUncontrolledSlug] = useState<string | null>(() =>
     resolveDefaultSlug(variantMembers, concentration),
   );
+
+  if (chapterLayout === "split") {
+    return (
+      <SplitHeroGallery
+        presentation={presentation}
+        concentration={concentration}
+        year={year}
+        activeSlug={activeSlug}
+        onActiveSlugChange={onActiveSlugChange}
+      />
+    );
+  }
+
   const selectedSlug = activeSlug ?? uncontrolledSlug;
   const setSelectedSlug = (slug: string) => {
     onActiveSlugChange?.(slug);
@@ -173,6 +190,7 @@ export function PerfumeHero({
     <HeroTransition
       hasChapterReveal={hasChapterReveal}
       hasFirmaFilm={Boolean(activeFirmaFilmSrc)}
+      layout={chapterLayout}
     >
       {({ pinRef, entered }) => (
         <section

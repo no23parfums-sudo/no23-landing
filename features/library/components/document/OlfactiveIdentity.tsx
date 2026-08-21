@@ -15,6 +15,10 @@ import type {
 type OlfactiveIdentityProps = {
   signatureNotes?: SignatureNote[];
   chapter?: NotesChapterPresentation;
+  /** Prototype split chapter — stacked editorial stories. */
+  layout?: "current" | "split";
+  /** Split: which story is the active scene. Captions fade when inactive. */
+  activeStory?: string | null;
 };
 
 const easeOut = [0.22, 1, 0.36, 1] as const;
@@ -49,6 +53,50 @@ const STAGE_INDEX: Record<string, string> = {
   base: "03",
 };
 
+function SplitStoryMedia({
+  item,
+  index,
+}: {
+  item: SignatureNote;
+  index: number;
+}) {
+  const focus = item.imageFocus ?? "50% 45%";
+  const initial = item.note.name.trim().charAt(0).toUpperCase();
+
+  return (
+    <div
+      className="note-specimen__media"
+      data-has-image={item.note.imageSrc ? "true" : "false"}
+      style={{ "--specimen-focus": focus } as CSSProperties}
+    >
+      {item.note.imageSrc ? (
+        <Image
+          src={item.note.imageSrc}
+          alt=""
+          fill
+          sizes="(max-width: 1023px) 92vw, 40vw"
+          className="note-specimen__image"
+          quality={88}
+          priority={index < 3}
+        />
+      ) : (
+        <span className="note-specimen__fallback" aria-hidden="true">
+          {initial}
+        </span>
+      )}
+      <div className="note-specimen__caption-motion">
+        <div className="note-specimen__veil" aria-hidden="true" />
+        <div className="note-specimen__overlay">
+          <p className="note-specimen__name">{item.note.name}</p>
+          {item.editorialLine ? (
+            <p className="note-specimen__line">{item.editorialLine}</p>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /**
  * Chapter 02 — Archival Triptych.
  * Three specimen plates on the warm document field.
@@ -58,11 +106,14 @@ const STAGE_INDEX: Record<string, string> = {
 export function OlfactiveIdentity({
   signatureNotes,
   chapter,
+  layout = "current",
+  activeStory = null,
 }: OlfactiveIdentityProps) {
   const reduceMotion = useReducedMotion();
   const notes = signatureNotes?.filter((item) => item.note?.name) ?? [];
   if (!notes.length) return null;
 
+  const isSplit = layout === "split";
   const revealInHero = Boolean(chapter?.revealInHero);
   const title =
     chapter?.title ??
@@ -73,16 +124,19 @@ export function OlfactiveIdentity({
    * becomes visible. No enter opacity animation / whileInView gate — those
    * produce a one-frame empty cream flash on fast downward scroll.
    */
-  const rideCreamPlane = revealInHero;
+  const rideCreamPlane = revealInHero || isSplit;
 
   return (
     <motion.section
       className={
-        revealInHero
-          ? "archive-section fragrance-notes fragrance-notes--hero-intro"
-          : "archive-section fragrance-notes"
+        isSplit
+          ? "archive-section fragrance-notes fragrance-notes--split"
+          : revealInHero
+            ? "archive-section fragrance-notes fragrance-notes--hero-intro"
+            : "archive-section fragrance-notes"
       }
       aria-labelledby="fragrance-notes-title"
+      data-layout={isSplit ? "split" : "current"}
       variants={
         reduceMotion || rideCreamPlane ? undefined : sectionVariants
       }
@@ -131,54 +185,78 @@ export function OlfactiveIdentity({
           return (
             <motion.article
               key={item.stage}
-              className="note-specimen"
+              className={
+                isSplit
+                  ? "note-specimen note-specimen--story"
+                  : "note-specimen"
+              }
               data-stage={item.stage}
+              data-split-note={isSplit ? item.stage : undefined}
+              data-story-active={
+                isSplit
+                  ? activeStory === item.stage
+                    ? "true"
+                    : "false"
+                  : undefined
+              }
               variants={
                 reduceMotion || rideCreamPlane ? undefined : itemVariants
               }
             >
-              <header className="note-specimen__meta">
+              <header
+                className={
+                  isSplit
+                    ? "note-specimen__meta sr-only"
+                    : "note-specimen__meta"
+                }
+              >
                 <span className="note-specimen__index" aria-hidden="true">
                   {indexLabel}
                 </span>
                 <h3 className="note-specimen__stage">{item.label}</h3>
               </header>
 
-              <div
-                className="note-specimen__media"
-                data-has-image={item.note.imageSrc ? "true" : "false"}
-                style={{ "--specimen-focus": focus } as CSSProperties}
-              >
-                {item.note.imageSrc ? (
-                  <Image
-                    src={item.note.imageSrc}
-                    alt=""
-                    fill
-                    sizes="(max-width: 900px) 92vw, 360px"
-                    className="note-specimen__image"
-                    quality={88}
-                    priority={rideCreamPlane && index < 3}
-                  />
-                ) : (
-                  <span className="note-specimen__fallback" aria-hidden="true">
-                    {initial}
-                  </span>
-                )}
-              </div>
+              {isSplit ? (
+                <SplitStoryMedia item={item} index={index} />
+              ) : (
+                <div
+                  className="note-specimen__media"
+                  data-has-image={item.note.imageSrc ? "true" : "false"}
+                  style={{ "--specimen-focus": focus } as CSSProperties}
+                >
+                  {item.note.imageSrc ? (
+                    <Image
+                      src={item.note.imageSrc}
+                      alt=""
+                      fill
+                      sizes="(max-width: 900px) 92vw, 360px"
+                      className="note-specimen__image"
+                      quality={88}
+                      priority={rideCreamPlane && index < 3}
+                    />
+                  ) : (
+                    <span className="note-specimen__fallback" aria-hidden="true">
+                      {initial}
+                    </span>
+                  )}
+                </div>
+              )}
 
-              <div className="note-specimen__body">
-                <p className="note-specimen__name">{item.note.name}</p>
-                {item.editorialLine ? (
-                  <p className="note-specimen__line">{item.editorialLine}</p>
-                ) : null}
-                {secondary.length ? (
-                  <ul className="note-specimen__taxonomy" aria-label="También">
-                    {secondary.map((name) => (
-                      <li key={name}>{name}</li>
-                    ))}
-                  </ul>
-                ) : null}
-              </div>
+              {isSplit ? null : (
+                <div className="note-specimen__body">
+                  <p className="note-specimen__name">{item.note.name}</p>
+                  {item.editorialLine ? (
+                    <p className="note-specimen__line">{item.editorialLine}</p>
+                  ) : null}
+                  {secondary.length ? (
+                    <ul className="note-specimen__taxonomy" aria-label="También">
+                      {secondary.map((name) => (
+                        <li key={name}>{name}</li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </div>
+              )}
             </motion.article>
           );
         })}

@@ -5,6 +5,8 @@ type HeroVariantSelectorProps = {
   members?: CollectionMember[];
   /** Fallback when no variant line is available */
   concentration?: string | null;
+  /** Line / collection name when the perfume has no sibling concentrations */
+  collectionTitle?: string | null;
   /** inline = compact under title; rail = labeled control in metadata column */
   placement?: "inline" | "rail";
   /** Controlled selection (in-hero family swap) */
@@ -29,7 +31,7 @@ function displayLabel(
  */
 export function HeroVariantSelector({
   members,
-  concentration,
+  collectionTitle,
   placement = "inline",
   selectedSlug,
   onSelect,
@@ -39,97 +41,100 @@ export function HeroVariantSelector({
       (member) => member.concentration || member.shortConcentration,
     ) ?? [];
 
-  if (!variants.length) {
-    if (!concentration) return null;
+  if (variants.length > 1) {
+    const activeSlug =
+      selectedSlug ??
+      variants.find((member) => member.current)?.slug ??
+      null;
+
     return (
-      <div
+      <nav
         className={
           placement === "rail"
-            ? "hero-variants hero-variants--rail hero-variants--solo"
-            : "hero-variants hero-variants--solo"
+            ? "hero-variants hero-variants--rail"
+            : "hero-variants"
         }
+        aria-label="Concentración"
       >
         {placement === "rail" ? (
           <span className="hero-variants__label">Concentración</span>
         ) : null}
-        <span className="hero-variants__current">{concentration}</span>
+        <ul className="hero-variants__list">
+          {variants.map((member, index) => {
+            const label = displayLabel(member, placement);
+            const full = member.concentration ?? label;
+            const isActive = activeSlug
+              ? member.slug === activeSlug
+              : Boolean(member.current);
+
+            return (
+              <li key={member.slug} className="hero-variants__item">
+                {placement === "inline" && index > 0 ? (
+                  <span className="hero-variants__rule" aria-hidden="true">
+                    |
+                  </span>
+                ) : null}
+                {onSelect ? (
+                  <button
+                    type="button"
+                    className={
+                      isActive
+                        ? "hero-variants__current"
+                        : "hero-variants__link"
+                    }
+                    aria-current={isActive ? "true" : undefined}
+                    title={full}
+                    onClick={() => {
+                      if (!isActive) onSelect(member);
+                    }}
+                  >
+                    {label}
+                  </button>
+                ) : isActive ? (
+                  <span
+                    className="hero-variants__current"
+                    aria-current="true"
+                    title={full}
+                  >
+                    {label}
+                  </span>
+                ) : member.href ? (
+                  <Link
+                    href={member.href}
+                    className="hero-variants__link"
+                    title={full}
+                  >
+                    {label}
+                  </Link>
+                ) : (
+                  <span className="hero-variants__inactive" title={full}>
+                    {label}
+                  </span>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+    );
+  }
+
+  if (collectionTitle) {
+    return (
+      <div
+        className={
+          placement === "rail"
+            ? "hero-variants hero-variants--rail"
+            : "hero-variants"
+        }
+      >
+        {placement === "rail" ? (
+          <span className="hero-variants__label">Colección</span>
+        ) : null}
+        <p className="hero-variants__current">{collectionTitle}</p>
       </div>
     );
   }
 
-  const activeSlug =
-    selectedSlug ??
-    variants.find((member) => member.current)?.slug ??
-    null;
-
-  return (
-    <nav
-      className={
-        placement === "rail"
-          ? "hero-variants hero-variants--rail"
-          : "hero-variants"
-      }
-      aria-label="Concentración"
-    >
-      {placement === "rail" ? (
-        <span className="hero-variants__label">Concentración</span>
-      ) : null}
-      <ul className="hero-variants__list">
-        {variants.map((member, index) => {
-          const label = displayLabel(member, placement);
-          const full = member.concentration ?? label;
-          const isActive = activeSlug
-            ? member.slug === activeSlug
-            : Boolean(member.current);
-
-          return (
-            <li key={member.slug} className="hero-variants__item">
-              {placement === "inline" && index > 0 ? (
-                <span className="hero-variants__rule" aria-hidden="true">
-                  |
-                </span>
-              ) : null}
-              {onSelect ? (
-                <button
-                  type="button"
-                  className={
-                    isActive
-                      ? "hero-variants__current"
-                      : "hero-variants__link"
-                  }
-                  aria-current={isActive ? "true" : undefined}
-                  title={full}
-                  onClick={() => {
-                    if (!isActive) onSelect(member);
-                  }}
-                >
-                  {label}
-                </button>
-              ) : isActive ? (
-                <span
-                  className="hero-variants__current"
-                  aria-current="true"
-                  title={full}
-                >
-                  {label}
-                </span>
-              ) : member.href ? (
-                <Link
-                  href={member.href}
-                  className="hero-variants__link"
-                  title={full}
-                >
-                  {label}
-                </Link>
-              ) : (
-                <span className="hero-variants__inactive" title={full}>
-                  {label}
-                </span>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
-  );
+  return null;
 }

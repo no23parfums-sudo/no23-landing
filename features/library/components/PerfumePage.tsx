@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { LibraryShell } from "./LibraryShell";
 import { PerfumeDetailView } from "./PerfumeDetailView";
 import { getPerfumeBySlug } from "../lib/queries";
@@ -19,7 +20,9 @@ export async function PerfumePage({ slug }: PerfumePageProps) {
 
   return (
     <LibraryShell mode="perfume" atmosphere={presentation.atmosphere}>
-      <PerfumeDetailView perfume={perfume} />
+      <Suspense>
+        <PerfumeDetailView perfume={perfume} />
+      </Suspense>
     </LibraryShell>
   );
 }

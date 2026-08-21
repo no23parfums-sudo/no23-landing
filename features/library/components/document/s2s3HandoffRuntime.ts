@@ -152,42 +152,53 @@ function syncDiscreteAttrs(
     section.setAttribute("data-handoff", handoff);
   }
   section.dataset.progress = progress.toFixed(4);
-
-  if (!notes) return;
-  /* Depth release begins ~10% — unlock compositor channels without feather yet */
-  const exit = settled ? "done" : progress > 0.1 ? "true" : "false";
-  if (notes.getAttribute("data-scene-exit") !== exit) {
-    notes.setAttribute("data-scene-exit", exit);
+  /* Signature Notes stays a solid page — no scene-exit / void masks. */
+  if (notes?.hasAttribute("data-scene-exit")) {
+    notes.removeAttribute("data-scene-exit");
   }
 }
 
 /**
- * Absolute scroll positions for the ~80vh handoff window.
- * Measured only when ScrollTrigger refreshes — never in the scroll hot path.
+ * Still-life lift window: first Architecture contact → ~340px.
+ * ~38% of a 900px viewport. Not a page-blend runway.
  */
+const S3_LIFT_TRAVEL_PX = 330;
+
 function measureHandoffWindow(section: HTMLElement): { start: number; end: number } {
   const vh = window.innerHeight;
   const y = window.scrollY;
   const top = section.getBoundingClientRect().top;
   return {
-    start: y + top - vh * 0.9,
-    end: y + top - vh * 0.1,
+    start: y + top - vh,
+    end: y + top - vh + S3_LIFT_TRAVEL_PX,
   };
 }
 
 const S2_REST_VARS: Record<string, string> = {
   "--s2-feather": "0px",
+  "--s2-void": "0",
   "--s2-opacity": "1",
   "--s2-support": "1",
+  "--s2-copy": "1",
+  "--s2-media": "1",
+  "--s2-names": "1",
+  "--s2-halo": "1",
+  "--s2-x-top": "0px",
+  "--s2-x-heart": "0px",
+  "--s2-x-base": "0px",
+  "--s2-y": "0px",
   "--s2-photo-y-top": "0px",
   "--s2-photo-y-heart": "0px",
   "--s2-photo-y-base": "0px",
 };
 
 const S3_REST_ACTIVE: Record<string, string> = {
-  "--s3-scene": "0.94",
-  "--s3-panel": "0",
-  "--s3-panel-y": "10px",
+  "--s3-scene": "1",
+  "--s3-still": "1",
+  "--s3-anno": "1",
+  "--s3-panel": "1",
+  "--s3-panel-y": "0px",
+  "--s3-lift": "0",
 };
 
 function applyVars(el: HTMLElement, vars: Record<string, string>) {
@@ -206,8 +217,11 @@ function clearS2Vars(notes: HTMLElement) {
 
 function clearS3Vars(section: HTMLElement) {
   section.style.removeProperty("--s3-scene");
+  section.style.removeProperty("--s3-still");
+  section.style.removeProperty("--s3-anno");
   section.style.removeProperty("--s3-panel");
   section.style.removeProperty("--s3-panel-y");
+  section.style.removeProperty("--s3-lift");
   delete section.dataset.progress;
   section.removeAttribute("data-handoff");
 }
@@ -233,11 +247,13 @@ export async function setupS2S3HandoffRuntime({
     section.setAttribute("data-handoff", "settled");
     section.dataset.progress = "1";
     section.style.setProperty("--s3-scene", "1");
+    section.style.setProperty("--s3-still", "1");
+    section.style.setProperty("--s3-anno", "1");
     section.style.setProperty("--s3-panel", "1");
     section.style.setProperty("--s3-panel-y", "0px");
+    section.style.setProperty("--s3-lift", "1");
     if (notes) {
       clearS2Vars(notes);
-      notes.setAttribute("data-scene-exit", "done");
     }
   };
 
@@ -270,96 +286,21 @@ export async function setupS2S3HandoffRuntime({
     clearS3Vars(section);
   };
 
-  /* Initial discrete state — DOM only, no React */
+  /* Pages stay solid. Only the still-life object lifts. */
   section.setAttribute("data-handoff", "active");
-  notes.setAttribute("data-scene-exit", "false");
-  applyVars(notes, S2_REST_VARS);
   applyVars(section, S3_REST_ACTIVE);
   section.dataset.progress = "0";
+  clearS2Vars(notes);
 
   let windowCache = measureHandoffWindow(section);
 
   const ctx = gsap.context(() => {
-    /*
-     * Master timeline — duration 1.0 maps directly to ST progress.
-     * Polish pass: earlier response + more overlapped phases (same visual logic).
-     *
-     * 0.00–0.10  Signature rest (hold)
-     * 0.10–0.36  Depth release
-     * 0.34–0.62  Crossover (cream yields / scene owns)
-     * 0.60–0.86  Architecture takeover (panel focus)
-     * 0.86–1.00  Neutralize transition debt
-     */
     const tl = gsap.timeline({ defaults: { ease: "none" } });
-
-    /* —— Phase 2: Depth release —— */
-    tl.fromTo(
-      notes,
-      {
-        "--s2-photo-y-top": "0px",
-        "--s2-photo-y-heart": "0px",
-        "--s2-photo-y-base": "0px",
-        "--s2-support": 1,
-      },
-      {
-        "--s2-photo-y-top": "-6px",
-        "--s2-photo-y-heart": "-9px",
-        "--s2-photo-y-base": "-7px",
-        "--s2-support": 0.92,
-        duration: 0.26,
-      },
-      0.1,
-    );
-
-    /* —— Phase 3: Crossover —— */
-    tl.fromTo(
-      notes,
-      { "--s2-feather": "0px" },
-      { "--s2-feather": "168px", duration: 0.28 },
-      0.34,
-    );
-
     tl.fromTo(
       section,
-      { "--s3-scene": 0.94 },
-      { "--s3-scene": 1, duration: 0.28 },
-      0.34,
-    );
-
-    /* Late, slight cream opacity — never a full crossfade */
-    tl.fromTo(
-      notes,
-      { "--s2-opacity": 1 },
-      { "--s2-opacity": 0.94, duration: 0.16 },
-      0.46,
-    );
-
-    /* —— Phase 4: Architecture takeover — panel only —— */
-    tl.to(
-      notes,
-      { "--s2-opacity": 0, duration: 0.2 },
-      0.6,
-    );
-
-    tl.fromTo(
-      section,
-      { "--s3-panel": 0, "--s3-panel-y": "10px" },
-      { "--s3-panel": 1, "--s3-panel-y": "0px", duration: 0.24 },
-      0.6,
-    );
-
-    /* —— Phase 5: Neutralize transition-specific S2 debt —— */
-    tl.to(
-      notes,
-      {
-        "--s2-feather": "0px",
-        "--s2-photo-y-top": "0px",
-        "--s2-photo-y-heart": "0px",
-        "--s2-photo-y-base": "0px",
-        "--s2-support": 1,
-        duration: 0.12,
-      },
-      0.86,
+      { "--s3-lift": 0 },
+      { "--s3-lift": 1, duration: 1 },
+      0,
     );
 
     ScrollTrigger.create({
@@ -367,9 +308,9 @@ export async function setupS2S3HandoffRuntime({
       animation: tl,
       start: () => windowCache.start,
       end: () => windowCache.end,
-      scrub: true,
+      scrub: 0.18,
       invalidateOnRefresh: true,
-      fastScrollEnd: true,
+      fastScrollEnd: false,
       onRefreshInit: () => {
         windowCache = measureHandoffWindow(section);
       },
@@ -382,14 +323,11 @@ export async function setupS2S3HandoffRuntime({
       onLeave: () => {
         tl.progress(1);
         syncDiscreteAttrs(section, notes, 1);
-        section.style.setProperty("--s3-scene", "1");
-        section.style.setProperty("--s3-panel", "1");
-        section.style.setProperty("--s3-panel-y", "0px");
+        section.style.setProperty("--s3-lift", "1");
       },
       onLeaveBack: () => {
         tl.progress(0);
         syncDiscreteAttrs(section, notes, 0);
-        applyVars(notes, S2_REST_VARS);
         applyVars(section, S3_REST_ACTIVE);
       },
     });
@@ -484,4 +422,11 @@ export async function setupS2S3HandoffRuntime({
       delete w.__NO23_S2S3__;
     }
   };
+}
+
+/** Same structural S2→S3 language as the default runtime. */
+export async function setupS2S3HandoffRuntimeContinuous(
+  args: SetupArgs,
+): Promise<() => void> {
+  return setupS2S3HandoffRuntime(args);
 }

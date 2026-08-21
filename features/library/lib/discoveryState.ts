@@ -8,7 +8,18 @@ export type SmokeDiscovery = "unseen" | "cinematic-played" | "visited";
 
 type VisitMemory = {
   performance: DiscoveryState;
+  /** First discovery used the long reading hold; revisit uses a short hold. */
+  performanceReleaseSeen: boolean;
   smoke: SmokeDiscovery;
+  /** True only after Signature Notes has fully owned the viewport this visit. */
+  signatureNotesReached: boolean;
+  /**
+   * Forward Film A is armed on load and after a genuine Hero rest.
+   * Cleared when Signature is reached so upward return skips Film.
+   */
+  forwardFilmReady: boolean;
+  /** Criterio signature clip-reveal spent for this document traversal. */
+  criterioSignatureSeen: boolean;
 };
 
 const visits = new Map<string, VisitMemory>();
@@ -21,7 +32,14 @@ function memory(): VisitMemory {
   const k = key();
   let visit = visits.get(k);
   if (!visit) {
-    visit = { performance: "unseen", smoke: "unseen" };
+    visit = {
+      performance: "unseen",
+      performanceReleaseSeen: false,
+      smoke: "unseen",
+      signatureNotesReached: false,
+      forwardFilmReady: true,
+      criterioSignatureSeen: false,
+    };
     visits.set(k, visit);
   }
   return visit;
@@ -53,6 +71,13 @@ export function resetDiscoveryForPath(pathname?: string): void {
   }
 }
 
+if (typeof window !== "undefined") {
+  /* QA / soft-nav helper — not part of product UI. */
+  (
+    window as Window & { __no23ResetDiscovery?: typeof resetDiscoveryForPath }
+  ).__no23ResetDiscovery = resetDiscoveryForPath;
+}
+
 export function markSmokePlayed(): void {
   const visit = memory();
   if (visit.smoke === "unseen") visit.smoke = "cinematic-played";
@@ -65,6 +90,44 @@ export function markSmokeVisited(): void {
 
 export function isPerformanceSettled(): boolean {
   return memory().performance === "settled";
+}
+
+/** True after the first Performance → Section 06 release completed this visit. */
+export function hasSeenPerformanceRelease(): boolean {
+  return memory().performanceReleaseSeen;
+}
+
+export function markPerformanceReleaseSeen(): void {
+  memory().performanceReleaseSeen = true;
+}
+
+/** Signature Notes has fully arrived — Hero/Film A intro is spent for this visit. */
+export function hasReachedSignatureNotes(): boolean {
+  return memory().signatureNotesReached;
+}
+
+export function markSignatureNotesReached(): void {
+  const visit = memory();
+  visit.signatureNotesReached = true;
+  /* Next upward pass skips Film until Hero rest re-arms forward. */
+  visit.forwardFilmReady = false;
+}
+
+export function isForwardFilmReady(): boolean {
+  return memory().forwardFilmReady;
+}
+
+export function hasCriterioSignatureBeenSeen(): boolean {
+  return memory().criterioSignatureSeen;
+}
+
+export function markCriterioSignatureSeen(): void {
+  memory().criterioSignatureSeen = true;
+}
+
+/** Call only when static Hero fully owns the resting pin. */
+export function rearmForwardFilm(): void {
+  if (memory().signatureNotesReached) memory().forwardFilmReady = true;
 }
 
 export function isSmokeVisited(): boolean {

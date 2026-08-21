@@ -36,7 +36,7 @@ export function LibraryShell({
           : undefined
       }
     >
-      <LibraryHeader />
+      <LibraryHeader variant={isPerfume ? "identity" : "classic"} />
       <main
         className={
           isPerfume ? "library-main library-main--perfume" : "library-main"

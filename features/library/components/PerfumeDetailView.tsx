@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import type { PerfumeDetail } from "../lib/types";
 import {
   resolveOlfactiveArchitecture,
@@ -20,6 +21,23 @@ type PerfumeDetailViewProps = {
  * Chapter 02 / 03 always resolve from the active slug — never inherited.
  */
 export function PerfumeDetailView({ perfume }: PerfumeDetailViewProps) {
+  const searchParams = useSearchParams();
+  const motionMode =
+    searchParams.get("motion") === "continuous" ? "continuous" : "current";
+  const chapterLayout =
+    searchParams.get("chapter") === "split" ? "split" : "current";
+  const performanceParam = searchParams.get("performance");
+  const performanceVariant =
+    performanceParam === "A" ||
+    performanceParam === "B" ||
+    performanceParam === "C" ||
+    performanceParam === "C1" ||
+    performanceParam === "C3"
+      ? performanceParam
+      : null;
+  const firmaParam = searchParams.get("firmaMotion");
+  const firmaMotion =
+    firmaParam === "timed" || firmaParam === "current" ? "timed" : "linked";
   const presentation = resolvePerfumePresentation(
     perfume.slug,
     perfume.displayName,
@@ -41,11 +59,16 @@ export function PerfumeDetailView({ perfume }: PerfumeDetailViewProps) {
         activeSlug={activeSlug}
         onActiveSlugChange={setActiveSlug}
         notesChapter={activeSignatureChapter.notesChapter ?? null}
+        chapterLayout={chapterLayout}
       />
       <PerfumeDocument
         presentation={presentation}
         activeSignatureChapter={activeSignatureChapter}
         activeArchitecture={activeArchitecture}
+        motionMode={motionMode}
+        chapterLayout={chapterLayout}
+        performanceVariant={performanceVariant}
+        firmaMotion={firmaMotion}
       />
     </>
   );

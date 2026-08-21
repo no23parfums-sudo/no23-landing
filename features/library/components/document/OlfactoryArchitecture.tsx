@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useReducedMotion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   useEffect,
   useId,
@@ -17,15 +17,28 @@ import type {
   NoteStage,
   SignatureNote,
 } from "../../lib/presentation";
-import { setupS2S3HandoffRuntime } from "./s2s3HandoffRuntime";
+import { setupS2S3HandoffRuntime, setupS2S3HandoffRuntimeContinuous } from "./s2s3HandoffRuntime";
+import {
+  splitStateFromPhase,
+  type SplitOlfactoryState,
+} from "./splitAnnotationMap";
+
+const NOTE_EASE = [0.22, 1, 0.36, 1] as const;
+
+export type AtlasPhaseId = "top" | "heart" | "base" | "composition";
 
 type OlfactoryArchitectureProps = {
   architecture?: ArchitecturePresentation | null;
   signatureNotes?: SignatureNote[];
+  motionMode?: "current" | "continuous";
+  /** Prototype split chapter — mutually exclusive with S2→S3 runtime. */
+  layout?: "current" | "split";
+  drivenPhase?: AtlasPhaseId;
+  onDrivenPhaseChange?: (id: AtlasPhaseId) => void;
 };
 
-type PhaseId = "top" | "heart" | "base" | "composition";
-type RevealState = "dormant" | "active" | "explore";
+type PhaseId = AtlasPhaseId;
+type RevealState = "dormant" | "active" | "explore" | "soft";
 
 const PHASE_ORDER: PhaseId[] = ["top", "heart", "base", "composition"];
 
@@ -97,6 +110,136 @@ function signatureForStage(
   signatureNotes?: SignatureNote[],
 ) {
   return signatureNotes?.find((s) => s.stage === stageId);
+}
+
+const SPLIT_NOTE_GROUPS: Record<
+  Exclude<SplitOlfactoryState, "composition">,
+  string[][]
+> = {
+  salida: [
+    ["aldehidos", "menta"],
+    ["bergamota", "limon"],
+    ["pomelo", "pimienta-rosa", "coriandro"],
+  ],
+  corazon: [
+    ["jengibre", "melon"],
+    ["jazmin", "nuez-moscada"],
+  ],
+  fondo: [
+    ["incienso", "ambar", "ladano"],
+    ["cedro", "sandalo"],
+    ["pachuli", "amberwood"],
+  ],
+};
+
+const SPLIT_STAGE_META: Record<
+  Exclude<SplitOlfactoryState, "composition">,
+  { index: string; label: string }
+> = {
+  salida: { index: "01", label: "Salida" },
+  corazon: { index: "02", label: "Corazón" },
+  fondo: { index: "03", label: "Fondo" },
+};
+
+function groupSplitNotes(
+  state: Exclude<SplitOlfactoryState, "composition">,
+  notes: NoteEntry[],
+  noteRows?: string[][],
+): string[][] {
+  const byId = new Map(notes.map((note) => [noteId(note), note.name]));
+  const groups = noteRows ?? SPLIT_NOTE_GROUPS[state] ?? [];
+  const rows = groups
+    .map((ids) => ids.map((id) => byId.get(id)).filter((name): name is string => Boolean(name)))
+    .filter((row) => row.length);
+  const used = new Set(rows.flat());
+  const leftover = notes.map((note) => note.name).filter((name) => !used.has(name));
+  if (leftover.length) rows.push(leftover);
+  return rows;
+}
+
+function SplitSpatialNotes({
+  state,
+  notes,
+  traits,
+  noteRows,
+  reduceMotion,
+}: {
+  state: Exclude<SplitOlfactoryState, "composition">;
+  notes: NoteEntry[];
+  traits?: string;
+  noteRows?: string[][];
+  reduceMotion: boolean;
+}) {
+  const rows = groupSplitNotes(state, notes, noteRows);
+  const meta = SPLIT_STAGE_META[state];
+  const [settled, setSettled] = useState(reduceMotion);
+
+  useEffect(() => {
+    setSettled(Boolean(reduceMotion));
+    if (reduceMotion) return;
+    const t = window.setTimeout(() => setSettled(true), 400);
+    return () => window.clearTimeout(t);
+  }, [state, reduceMotion]);
+
+  return (
+    <div className="split-anno">
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={state}
+          className="split-anno__block"
+          data-state={state}
+          data-settled={settled ? "true" : "false"}
+          initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{
+            opacity: 0,
+            y: -8,
+            transition: { duration: 0.22, ease: NOTE_EASE },
+          }}
+          transition={{ duration: 0.36, delay: 0.04, ease: NOTE_EASE }}
+        >
+          <p className="split-anno__index">
+            <span className="split-anno__num">{meta.index}</span>
+            <span className="split-anno__sep" aria-hidden="true">
+              —
+            </span>
+            <span className="split-anno__stage">{meta.label}</span>
+          </p>
+          <div className="split-anno__notes">
+            {rows.map((row, i) => (
+              <motion.p
+                key={row.join("·")}
+                className="split-anno__row"
+                initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  duration: 0.24,
+                  delay: reduceMotion ? 0 : 0.03 * (i + 1),
+                  ease: NOTE_EASE,
+                }}
+              >
+                {row.join(" · ")}
+              </motion.p>
+            ))}
+          </div>
+          {traits ? (
+            <motion.p
+              className="split-anno__traits"
+              initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                duration: 0.24,
+                delay: reduceMotion ? 0 : 0.03 * (rows.length + 1),
+                ease: NOTE_EASE,
+              }}
+            >
+              {traits}
+            </motion.p>
+          ) : null}
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  );
 }
 
 function Annotation({
@@ -274,29 +417,40 @@ type FlatNote = {
 export function OlfactoryArchitecture({
   architecture,
   signatureNotes,
+  motionMode = "current",
+  layout = "current",
+  drivenPhase,
+  onDrivenPhaseChange,
 }: OlfactoryArchitectureProps) {
   const reduceMotion = useReducedMotion();
   const tablistId = useId();
   const uid = useId().replace(/:/g, "");
   const sectionRef = useRef<HTMLElement>(null);
-  const [phase, setPhase] = useState<PhaseId>("top");
+  const mediaRef = useRef<HTMLDivElement>(null);
+  const [internalPhase, setInternalPhase] = useState<PhaseId>("top");
+  const isSplit = layout === "split";
+  const phase = isSplit && drivenPhase ? drivenPhase : internalPhase;
   const [panelTick, setPanelTick] = useState(0);
   const [sweeping, setSweeping] = useState(false);
   const [exploreId, setExploreId] = useState<string | null>(null);
   const prevPhaseRef = useRef<PhaseId>("top");
 
   const stages = architecture?.stages?.filter((s) => s.notes.length) ?? [];
-  const stillLifeSrc = architecture?.stillLifeSrc;
+  const stillLifeSrc = isSplit
+    ? architecture?.stillLifeSplitSrc ?? architecture?.stillLifeSrc
+    : architecture?.stillLifeSrc;
   const sectionBackgroundSrc =
     architecture?.sectionBackgroundSrc ?? stillLifeSrc;
 
   /*
-   * Normalize deps so the effect array is always length 2 / same order.
+   * Normalize deps so the effect array is always the same length / order.
    * stillLifeSrc may be undefined while concentration has no Architecture —
    * use "" so the slot still exists (never omit the dependency).
    */
   const reduceMotionDep = Boolean(reduceMotion);
   const stillLifeSrcDep = stillLifeSrc ?? "";
+  const motionModeDep = motionMode === "continuous" ? "continuous" : "current";
+  const layoutDep = isSplit ? "split" : "current";
 
   const flatNotes: FlatNote[] = stages.flatMap((stage) =>
     stage.notes.map((note, index) => ({
@@ -313,15 +467,23 @@ export function OlfactoryArchitecture({
    * Safely no-ops when section DOM is absent or src is empty.
    */
   useEffect(() => {
+    if (layoutDep === "split") return;
     if (!stillLifeSrcDep) return;
 
     const section = sectionRef.current;
     if (!section) return;
 
+    const continuous =
+      motionModeDep === "continuous" &&
+      window.matchMedia("(min-width: 701px)").matches;
+    const setup = continuous
+      ? setupS2S3HandoffRuntimeContinuous
+      : setupS2S3HandoffRuntime;
+
     const ac = new AbortController();
     let cleanup: (() => void) | undefined;
 
-    void setupS2S3HandoffRuntime({
+    void setup({
       section,
       reduceMotion: reduceMotionDep,
       signal: ac.signal,
@@ -337,9 +499,14 @@ export function OlfactoryArchitecture({
       ac.abort();
       cleanup?.();
     };
-  }, [reduceMotionDep, stillLifeSrcDep]);
+  }, [reduceMotionDep, stillLifeSrcDep, motionModeDep, layoutDep]);
 
   useEffect(() => {
+    if (isSplit) {
+      setSweeping(false);
+      if (phase !== "composition") setExploreId(null);
+      return;
+    }
     const prev = prevPhaseRef.current;
     prevPhaseRef.current = phase;
     if (phase !== "composition") {
@@ -355,10 +522,14 @@ export function OlfactoryArchitecture({
     setSweeping(true);
     const t = window.setTimeout(() => setSweeping(false), COMPOSITION_SWEEP_MS);
     return () => window.clearTimeout(t);
-  }, [phase, reduceMotion]);
+  }, [phase, reduceMotion, isSplit]);
 
   const selectPhase = (id: PhaseId) => {
-    setPhase(id);
+    if (isSplit && onDrivenPhaseChange) {
+      onDrivenPhaseChange(id);
+    } else {
+      setInternalPhase(id);
+    }
     setPanelTick((n) => n + 1);
     setExploreId(null);
   };
@@ -368,6 +539,9 @@ export function OlfactoryArchitecture({
   const index = architecture?.index ?? "04";
   const eyebrow = architecture?.eyebrow ?? "Arquitectura Olfativa";
   const isComposition = phase === "composition";
+  const splitState: SplitOlfactoryState | null = isSplit
+    ? splitStateFromPhase(phase)
+    : null;
   const activeStage = isComposition
     ? null
     : (stages.find((s) => s.id === phase) ?? stages[0]);
@@ -389,7 +563,10 @@ export function OlfactoryArchitecture({
   let emphasisMode: "phase" | "composition" | "explore" | "off" = "phase";
   let highlights: ArchitectureHighlight[] = activeStage?.highlights ?? [];
 
-  if (isComposition) {
+  if (isSplit) {
+    emphasisMode = "off";
+    highlights = [];
+  } else if (isComposition) {
     if (exploreNote?.note.map) {
       const m = resolveMap(exploreNote.note.map);
       emphasisMode = "explore";
@@ -413,6 +590,10 @@ export function OlfactoryArchitecture({
   }
 
   const revealFor = (flat: FlatNote): RevealState => {
+    if (isSplit) {
+      if (isComposition) return "dormant";
+      return flat.stageId === phase ? "active" : "dormant";
+    }
     if (isComposition) {
       return exploreId === flat.id ? "explore" : "dormant";
     }
@@ -426,6 +607,7 @@ export function OlfactoryArchitecture({
    * - Corazón / Fondo / Composición default → show
    */
   const railConceal = (() => {
+    if (isSplit) return false;
     if (phase === "top") return true;
     if (isComposition && exploreNote?.note.map) {
       const m = resolveMap(exploreNote.note.map);
@@ -444,6 +626,8 @@ export function OlfactoryArchitecture({
       data-exploring={exploreId ? "true" : "false"}
       data-rail-conceal={railConceal ? "true" : "false"}
       data-reduce-motion={reduceMotion ? "true" : "false"}
+      data-layout={isSplit ? "split" : "current"}
+      data-split-state={splitState ?? undefined}
       data-page-chapter="04"
     >
       <div className="arch-atlas__scene">
@@ -452,7 +636,7 @@ export function OlfactoryArchitecture({
             src={sectionBackgroundSrc!}
             alt=""
             fill
-            sizes="100vw"
+            sizes={isSplit ? "66vw" : "100vw"}
             className="arch-atlas__atmosphere-image"
             quality={100}
             /* Serve original bytes — no optimizer recompress/resize derivative */
@@ -471,6 +655,7 @@ export function OlfactoryArchitecture({
                */}
               <div className="arch-atlas__stage">
                 <div
+                  ref={mediaRef}
                   className="arch-atlas__media"
                   data-exploring={exploreId ? "true" : "false"}
                   style={
@@ -483,6 +668,42 @@ export function OlfactoryArchitecture({
                     if (e.target === e.currentTarget) setExploreId(null);
                   }}
                 >
+                  {isSplit ? (
+                    <>
+                      <div className="arch-atlas__still">
+                        <Image
+                          src={stillLifeSrc}
+                          alt={architecture?.stillLifeAlt ?? ""}
+                          fill
+                          sizes="(max-width: 1023px) 100vw, 66vw"
+                          className="arch-atlas__image"
+                          quality={100}
+                          unoptimized
+                          priority
+                        />
+                      </div>
+                      {!isComposition && splitState ? (
+                        <div
+                          className="arch-atlas__split-light"
+                          data-state={splitState}
+                          aria-hidden="true"
+                        />
+                      ) : null}
+                      {!isComposition &&
+                      splitState &&
+                      splitState !== "composition" &&
+                      noteList.length ? (
+                        <SplitSpatialNotes
+                          state={splitState}
+                          notes={noteList}
+                          traits={traits}
+                          noteRows={activeStage?.noteRows}
+                          reduceMotion={Boolean(reduceMotion)}
+                        />
+                      ) : null}
+                    </>
+                  ) : (
+                    <>
                   <div className="arch-atlas__bloom" aria-hidden="true" />
                   <Image
                     src={stillLifeSrc}
@@ -496,18 +717,20 @@ export function OlfactoryArchitecture({
                     priority
                   />
 
-                  <PhaseEmphasis
-                    highlights={highlights}
-                    uid={uid}
-                    mode={emphasisMode}
-                  />
+                    <PhaseEmphasis
+                      highlights={highlights}
+                      uid={uid}
+                      mode={emphasisMode}
+                    />
+                    </>
+                  )}
 
                   <CompositionSweep active={sweeping} />
 
                   <div className="arch-atlas__dissolve" aria-hidden="true" />
 
-                  {/* COMPOSICIÓN explore hotspots */}
-                  {isComposition ? (
+                  {/* COMPOSICIÓN explore hotspots — canonical only */}
+                  {isComposition && !isSplit ? (
                     <div className="arch-atlas__hotspots">
                       {[...flatNotes]
                         .filter((flat) => flat.note.map)
@@ -582,66 +805,80 @@ export function OlfactoryArchitecture({
                   ) : null}
                 </div>
 
-                <ul className="arch-atlas__annotations" aria-hidden="true">
-                  {flatNotes.map((flat) => (
-                    <Annotation
-                      key={flat.id}
-                      note={flat.note}
-                      reveal={revealFor(flat)}
-                      featured={
-                        !isComposition && flat.note.name === signatureName
-                      }
-                      index={flat.index}
-                    />
-                  ))}
-                </ul>
+                {isSplit ? null : (
+                  <ul className="arch-atlas__annotations" aria-hidden="true">
+                    {flatNotes.map((flat) => (
+                      <Annotation
+                        key={flat.id}
+                        note={flat.note}
+                        reveal={revealFor(flat)}
+                        featured={
+                          !isComposition && flat.note.name === signatureName
+                        }
+                        index={flat.index}
+                      />
+                    ))}
+                  </ul>
+                )}
               </div>
             </div>
 
             <aside className="arch-atlas__panel">
               <header className="arch-atlas__panel-head">
-                <h2 id="architecture-title" className="arch-atlas__meta">
+                <h2
+                  id="architecture-title"
+                  className={isSplit ? "sr-only" : "arch-atlas__meta"}
+                >
                   <span className="arch-atlas__meta-index">{index}</span>
                   <span className="arch-atlas__meta-rule" aria-hidden="true" />
                   <span className="arch-atlas__meta-eyebrow">{eyebrow}</span>
                 </h2>
 
-                <div
-                  className="arch-atlas__tabs"
-                  role="tablist"
-                  aria-label="Fases olfativas"
-                  id={tablistId}
-                >
-                  {PHASE_NAV.map((item) => {
-                    const selected = item.id === phase;
-                    const passed =
-                      item.id !== "composition" &&
-                      phase !== "composition" &&
-                      phaseIndex(item.id) < phaseIndex(phase);
-                    return (
-                      <button
-                        key={item.id}
-                        type="button"
-                        role="tab"
-                        id={`${tablistId}-${item.id}`}
-                        aria-selected={selected}
-                        className="arch-atlas__tab"
-                        data-active={selected ? "true" : "false"}
-                        data-passed={passed ? "true" : "false"}
-                        onClick={() => selectPhase(item.id)}
-                      >
-                        <span className="arch-atlas__tab-index">
-                          {item.index}
-                        </span>
-                        <span className="arch-atlas__tab-label">
-                          {item.label}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
+                {isSplit ? (
+                  <p className="sr-only" aria-live="polite">
+                    {navMeta?.label}
+                  </p>
+                ) : null}
+
+                {isSplit ? null : (
+                  <div
+                    className="arch-atlas__tabs"
+                    role="tablist"
+                    aria-label="Fases olfativas"
+                    id={tablistId}
+                  >
+                    {PHASE_NAV.map((item) => {
+                      const selected = item.id === phase;
+                      const passed =
+                        item.id !== "composition" &&
+                        phase !== "composition" &&
+                        phaseIndex(item.id) < phaseIndex(phase);
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          role="tab"
+                          id={`${tablistId}-${item.id}`}
+                          aria-selected={selected}
+                          className="arch-atlas__tab"
+                          data-active={selected ? "true" : "false"}
+                          data-passed={passed ? "true" : "false"}
+                          onClick={() => selectPhase(item.id)}
+                        >
+                          <span className="arch-atlas__tab-index">
+                            {item.index}
+                          </span>
+                          <span className="arch-atlas__tab-label">
+                            {item.label}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </header>
 
+              {isSplit ? null : (
               <div
                 className="arch-atlas__body"
                 role="tabpanel"
@@ -704,6 +941,7 @@ export function OlfactoryArchitecture({
                   )}
                 </div>
               </div>
+              )}
             </aside>
           </div>
         </div>

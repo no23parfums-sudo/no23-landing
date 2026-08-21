@@ -1,4 +1,42 @@
-# NO.23 Perfume Master Template V1
+# NO.23 Perfume Master Template — V1 APPROVED
+
+**Status:** freeze. Golden page: Bleu de Chanel Eau de Parfum, **split layout**.
+
+Canonical URL:
+
+`/perfume/bleu-de-chanel-eau-de-parfum?chapter=split`
+
+Do not casually restyle locked sections. A second perfume should inherit this system through **data and assets**, not bespoke CSS or motion forks.
+
+---
+
+## Freeze (current)
+
+| Item | Locked value |
+| --- | --- |
+| Layout | Split (`?chapter=split`) |
+| Firma motion | Scroll-linked assembly by default (~50vh / 450px at 1440×900). No pin, no extra runway. |
+| Timed Firma | Dev fallback only: `?firmaMotion=timed`. Also used for `prefers-reduced-motion`. |
+| Lenis | `lerp: 0.16` in `shared/lib/lenis/config.ts` — do not retune from other files |
+| Firma rest | Image grid + copy alignment locked (copy x 58, bottle/eyebrow y 72, title y 114, water y 609 at 1440) |
+| Hero | Locked |
+| Architecture | Locked |
+| Performance content / panel size | Locked. Top hairline and bottom panel edge share `--perf-sheet-edge`. |
+| Performance → Línea Bleu | Locked |
+| Línea Bleu | Locked |
+| Reviews / Bibliothèque / actions | Locked |
+| Typography, assets, copy, section order | Locked |
+
+Future fichas: new slug + presentation record + media. Do not add perfume-named CSS overrides.
+
+---
+
+## Historical note
+
+The remainder of this file documents an **earlier chapter-rail architecture** (Hero Firma film, Smoke as Performance opening, Overview assemble). It is **not** the current split page. Keep it as research context only.
+
+---
+
 
 Internal freeze document. Golden candidate: **Bleu de Chanel Eau de Parfum**.
 

@@ -11,4 +11,8 @@ export { CollectionLine } from "./CollectionLine";
 export { LineageSection } from "./LineageSection";
 export { AffinitiesSection } from "./AffinitiesSection";
 export { PerfumeActions } from "./PerfumeActions";
+export { PerfumeExploreClose, ExploreBibliothequeBanner } from "./PerfumeExploreClose";
+export { RatingSummary } from "./RatingSummary";
+export { ReviewsSection, ReviewItem } from "./ReviewsSection";
+export { RelatedEntityCard } from "./RelatedEntityCard";
 export { No23AuthGate } from "./No23AuthGate";

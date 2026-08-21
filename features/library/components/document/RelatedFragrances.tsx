@@ -22,18 +22,29 @@ export function RelatedFragrances({ related }: RelatedFragrancesProps) {
         lede="Lecturas cercanas, curadas — no calculadas."
       />
       <ul className="related-fragrances__list">
-        {related.map((item) => (
-          <li key={item.slug}>
-            <Link href={item.href} className="related-fragrances__link">
+        {related.map((item) => {
+          const body = (
+            <>
               <span className="related-fragrances__name">{item.name}</span>
               {item.concentration ? (
                 <span className="related-fragrances__meta">
                   {item.concentration}
                 </span>
               ) : null}
-            </Link>
-          </li>
-        ))}
+            </>
+          );
+          return (
+            <li key={item.slug}>
+              {item.href ? (
+                <Link href={item.href} className="related-fragrances__link">
+                  {body}
+                </Link>
+              ) : (
+                <div className="related-fragrances__static">{body}</div>
+              )}
+            </li>
+          );
+        })}
       </ul>
     </section>
   );

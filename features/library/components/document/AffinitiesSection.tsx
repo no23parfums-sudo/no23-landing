@@ -10,6 +10,7 @@ type AffinitiesSectionProps = {
 /**
  * Affinities outside the same line.
  * Hidden when no curated items — never invents recommendations.
+ * Links only when a real href exists.
  */
 export function AffinitiesSection({ affinities }: AffinitiesSectionProps) {
   if (!affinities?.items?.length) return null;
@@ -29,18 +30,33 @@ export function AffinitiesSection({ affinities }: AffinitiesSectionProps) {
         {lede ? <p className="affinities-section__lede">{lede}</p> : null}
       </header>
       <ul className="affinities-section__list" role="list">
-        {items.map((item) => (
-          <li key={item.slug} className="affinities-section__item">
-            <Link href={item.href} className="affinities-section__link">
+        {items.map((item) => {
+          const body = (
+            <>
+              {item.reason ? (
+                <span className="affinities-section__reason">{item.reason}</span>
+              ) : null}
               <span className="affinities-section__name">{item.name}</span>
               {item.concentration ? (
                 <span className="affinities-section__conc">
                   {item.concentration}
                 </span>
               ) : null}
-            </Link>
-          </li>
-        ))}
+            </>
+          );
+
+          return (
+            <li key={item.slug} className="affinities-section__item">
+              {item.href ? (
+                <Link href={item.href} className="affinities-section__link">
+                  {body}
+                </Link>
+              ) : (
+                <div className="affinities-section__static">{body}</div>
+              )}
+            </li>
+          );
+        })}
       </ul>
     </section>
   );

@@ -1,5 +1,7 @@
 import type { AtmosphereId } from "./atmosphere";
 import { DEFAULT_ATMOSPHERE } from "./atmosphere";
+import type { ReviewsData } from "./reviews";
+import type { UsageMomentsReading } from "./usageMoments";
 
 /* —— Shared editorial atoms —— */
 
@@ -43,6 +45,8 @@ export type NoteEntry = {
    * Used only when architecture.stillLifeSrc is present.
    */
   map?: NoteMapAnchor;
+  /** Future ingredient encyclopedia destination — omit until the page exists */
+  href?: string;
 };
 
 /**
@@ -68,9 +72,17 @@ export type NoteStage = {
    * (e.g. "Fresco · Cítrico · Aromático") — optional per perfume.
    */
   traits?: string;
+  /** Authored overlay lines — arrays of note ids matching `notes`. */
+  noteRows?: string[][];
   /** Optional still-life emphasis regions for this phase */
   highlights?: ArchitectureHighlight[];
   notes: NoteEntry[];
+};
+
+/** Compact chapter marker between Firma and Arquitectura (split). */
+export type ArchitectureIntro = {
+  eyebrow?: string;
+  stagesLabel?: string;
 };
 
 /**
@@ -93,6 +105,8 @@ export type SignatureNote = {
   secondaryNotes?: string[];
   /** object-position for the specimen plate, e.g. "50% 40%" */
   imageFocus?: string;
+  /** Future ingredient encyclopedia destination — omit until the page exists */
+  href?: string;
 };
 
 /** Optional Chapter 02 masthead overrides (template defaults apply otherwise). */
@@ -115,6 +129,65 @@ export type PerfumerPresentation = {
   creditLabel?: string;
   /** Short quote for architecture insight — optional */
   quote?: string;
+  /** Future perfumer profile destination — omit until the page exists */
+  href?: string;
+};
+
+export type RelatedEntityType = "perfumer" | "brand";
+export type RelatedEntityAsset = "portrait" | "logo";
+
+/** Master-template discovery module — perfumer(s) and house/brand. */
+export type RelatedEntityPresentation = {
+  type: RelatedEntityType;
+  name: string;
+  image?: string;
+  /** Visual treatment inside the shared media frame. Defaults from `type`. */
+  asset?: RelatedEntityAsset;
+  cta: string;
+  /** Future profile destination — omit until the page exists */
+  href?: string;
+};
+
+export function relatedEntityAsset(
+  entity: Pick<RelatedEntityPresentation, "type" | "asset">,
+): RelatedEntityAsset {
+  return entity.asset ?? (entity.type === "brand" ? "logo" : "portrait");
+}
+
+export function relatedEntitiesFrom(presentation: {
+  perfumer?: PerfumerPresentation;
+  brandName?: string;
+  brandLogoSrc?: string;
+  brandHref?: string;
+}): RelatedEntityPresentation[] {
+  const items: RelatedEntityPresentation[] = [];
+  if (presentation.perfumer?.name) {
+    items.push({
+      type: "perfumer",
+      name: presentation.perfumer.name,
+      image: presentation.perfumer.portraitSrc,
+      asset: "portrait",
+      cta: "Descubrí más creaciones",
+      href: presentation.perfumer.href,
+    });
+  }
+  if (presentation.brandName) {
+    items.push({
+      type: "brand",
+      name: presentation.brandName,
+      image: presentation.brandLogoSrc,
+      asset: "logo",
+      cta: "Descubrí más",
+      href: presentation.brandHref,
+    });
+  }
+  return items;
+}
+
+/** Editorial duration band — never a precise laboratory hour. */
+export type HoursRange = {
+  min: number;
+  max: number;
 };
 
 export type ContinuumReading = {
@@ -125,7 +198,47 @@ export type ContinuumReading = {
   poles?: [string, string];
   /** Short marker under the settled node, e.g. "Prolongada" */
   marker?: string;
+  /**
+   * Optional approximate hour range (Longevity).
+   * Kept separate from `marker` — UI may compose them.
+   */
+  hoursRange?: HoursRange;
 };
+
+/** Editorial criterion rail (Facilidad de uso / Compra a ciegas). */
+export type CriterionReading = ContinuumReading & {
+  /** Hover/tap meaning — omit to use the template default. */
+  explanation?: string;
+  /**
+   * Authoritative NO.23 editorial score on a 0–10 scale.
+   * Independent of bar geometry. If omitted, UI may derive a
+   * provisional display value from `position`.
+   */
+  score?: number;
+  /**
+   * Authoritative qualitative verdict (e.g. "Muy fácil").
+   * If omitted, derived from `score` via Criterio Scoring V1 bands.
+   */
+  verdict?: string;
+  /** Editorial scoring rationale — metadata, not shown in the main UI. */
+  rationale?: string;
+};
+
+export function formatHoursRange(range?: HoursRange): string | null {
+  if (!range || range.min <= 0 || range.max < range.min) return null;
+  return `≈ ${range.min}–${range.max} H`;
+}
+
+/** Qualitative marker, optionally composed with an hour range. */
+export function formatContinuumMarker(
+  reading: ContinuumReading,
+  withHours = false,
+): string {
+  const qualitative = reading.marker ?? reading.reading;
+  if (!withHours) return qualitative;
+  const hours = formatHoursRange(reading.hoursRange);
+  return hours ? `${qualitative} · ${hours}` : qualitative;
+}
 
 export type SpectrumReading = {
   reading: string;
@@ -145,29 +258,71 @@ export type PerformancePresentation = {
   seasons?: SpectrumReading;
   occasions?: SpectrumReading;
   /**
+   * Compact Performance sheet — perfume-specific usage contexts.
+   * Selected from the NO.23 taxonomy (normally 3). Independent of
+   * `occasions`, which remains the master immersive spectrum.
+   */
+  moments?: UsageMomentsReading;
+  /**
+   * Human interpretation of the six metrics — perfume-specific.
+   * Omit to hide Lectura NO.23.
+   */
+  lectura?: string;
+  /**
+   * Two editorial criteria (Facilidad de uso / Compra a ciegas).
+   * Perfume-level data — rendered in Section 06 as NO.23 Guidance,
+   * not inside Performance Overview.
+   * Omit either or both to hide that rail.
+   */
+  criterio?: {
+    easeOfUse?: CriterionReading;
+    blindBuy?: CriterionReading;
+  };
+  /**
    * Internal research notes for editorial metrics.
    * Not user-facing as a source attribution of the bars.
    */
   researchBasis?: string[];
+  /**
+   * Optional fragrance accent for Performance marks (CSS color).
+   * Omit to inherit `--fragrance-accent-ink`.
+   */
+  accent?: string;
 };
 
 export type RelatedFragrance = {
   slug: string;
   name: string;
   concentration?: string;
-  href: string;
+  /**
+   * Destination perfume page. Omit when the page does not exist yet —
+   * never use "#", javascript:void, or dead anchors.
+   */
+  href?: string;
+  /**
+   * Future editorial relationship cue, e.g. "PERFIL CERCANO".
+   * Not shown until affinities are curated at library scale.
+   */
+  reason?: string;
 };
 
-/** Chronological family line — scalable across fragrances. */
-export type LineageEntry = {
+/**
+ * Section 06 relational / continued discovery.
+ * - lineage: concentration family (Bleu)
+ * - maison: curated maison discoveries when no meaningful line exists
+ * Omit the whole presentation (or leave entries empty) to hide Section 06.
+ */
+export type RelationsMode = "lineage" | "maison";
+
+export type RelationsEntry = {
   id: string;
-  year: number | string;
+  year?: number | string;
   name: string;
-  concentration: string;
+  concentration?: string;
   imageSrc: string;
   /** Short editorial reading — one line */
-  reading: string;
-  /** Current page fragrance */
+  reading?: string;
+  /** Current page fragrance (lineage mode) */
   current?: boolean;
   /** Optional link when that perfume page exists — omit rather than fake */
   href?: string;
@@ -177,11 +332,31 @@ export type LineageEntry = {
   perfumerPortraitSrc?: string;
 };
 
-export type LineagePresentation = {
+export type RelationsPresentation = {
+  mode: RelationsMode;
   index?: string;
+  /** e.g. "LA LÍNEA" | "LA MAISON" */
   eyebrow?: string;
   title: string;
   subtitle?: string;
+  /** Optional maison profile link — omit until the destination exists */
+  maisonHref?: string;
+  entries: RelationsEntry[];
+};
+
+/**
+ * @deprecated Prefer RelationsPresentation with mode: "lineage".
+ * Kept so existing Bleu data and imports keep compiling during V1.1.
+ */
+export type LineageEntry = RelationsEntry & {
+  year: number | string;
+  concentration: string;
+  reading: string;
+};
+
+/** @deprecated Prefer RelationsPresentation */
+export type LineagePresentation = Omit<RelationsPresentation, "mode"> & {
+  mode?: "lineage";
   entries: LineageEntry[];
 };
 
@@ -284,6 +459,14 @@ export type ArchitecturePresentation = {
    */
   stillLifeSrc?: string;
   stillLifeAlt?: string;
+  /** Compact chapter marker between Firma and the split atlas. */
+  intro?: ArchitectureIntro;
+  /**
+   * Split-chapter synthesis still (Arquitectura right pane).
+   * Desktop generation target: 931:824 (quadrant @ 1440×900).
+   * Canonical atlas keeps stillLifeSrc so annotation maps stay valid.
+   */
+  stillLifeSplitSrc?: string;
   /**
    * Full-bleed Section 3 atmospheric plate (under still-life + panel).
    * Distinct from stillLifeSrc — never baked with product/UI.
@@ -313,6 +496,8 @@ export type PerfumePresentation = {
   heroTitleLines?: string[];
   brandName: string;
   brandLogoSrc?: string;
+  /** Future maison / brand destination — omit until the page exists */
+  brandHref?: string;
   editorialSrc?: string;
   bottleSrc?: string;
   archivalCaption?: string;
@@ -339,13 +524,23 @@ export type PerfumePresentation = {
 
   moodboard?: MoodboardPresentation;
   history?: HistoryPresentation;
-  /** Chronological line / family chapter (replaces duplicated History + Collection) */
+  /**
+   * Section 06 — relational / continued discovery (lineage or maison).
+   * Prefer this over legacy `lineage`. Hidden when omitted or entries empty.
+   */
+  relations?: RelationsPresentation;
+  /**
+   * @deprecated Prefer `relations` with mode: "lineage".
+   * Still accepted for Bleu and older records.
+   */
   lineage?: LineagePresentation;
   performance?: PerformancePresentation;
 
   related?: RelatedFragrance[];
   /** Affinities outside the same line — omit or empty to hide section */
   affinities?: AffinityPresentation;
+  /** Live community reviews. Omit or empty until real data exists. */
+  reviews?: ReviewsData;
 
   collection?: {
     title?: string;
@@ -449,6 +644,7 @@ const PRESENTATIONS: Record<string, PerfumePresentation> = {
         position: 0.74,
         poles: ["Corta", "Larga"],
         marker: "Prolongada",
+        hoursRange: { min: 7, max: 9 },
       },
       projection: {
         reading: "Presencia moderada",
@@ -463,10 +659,10 @@ const PRESENTATIONS: Record<string, PerfumePresentation> = {
         marker: "Moderada",
       },
       seasons: {
-        reading: "Todas las estaciones, con más presencia en climas frescos",
+        reading: "Todas las estaciones, gran versatilidad durante todo el año",
         spectrum: ["Primavera", "Verano", "Otoño", "Invierno"],
         active: ["Primavera", "Verano", "Otoño", "Invierno"],
-        weights: [0.82, 0.52, 0.92, 0.82],
+        weights: [0.90, 0.78, 0.92, 0.80],
       },
       occasions: {
         reading: "Del escritorio a la noche",
@@ -474,11 +670,48 @@ const PRESENTATIONS: Record<string, PerfumePresentation> = {
         active: ["Día", "Trabajo", "Noche", "Formal"],
         weights: [0.86, 0.92, 0.88, 0.82],
       },
+      moments: {
+        reading: "Del uso diario a la noche",
+        items: [
+          { id: "daily", score: 0.85 },
+          { id: "work", score: 0.9 },
+          { id: "night", score: 0.8 },
+        ],
+      },
       versatility: {
         reading: "Amplia",
         position: 0.82,
         poles: ["Especializada", "Muy versátil"],
         marker: "Amplia",
+      },
+      lectura:
+        "Fresco, cítrico y amaderado, con una presencia equilibrada. Ofrece alrededor de 7–9 horas en piel, una proyección perceptible durante las primeras horas y una estela moderada. Su versatilidad permite llevarlo del día a la noche y durante gran parte del año.",
+      accent: "#3d5a73",
+      criterio: {
+        easeOfUse: {
+          reading: "Sencilla de incorporar",
+          position: 0.82,
+          poles: ["Difícil", "Fácil"],
+          marker: "Muy fácil",
+          score: 8.2,
+          verdict: "Muy fácil",
+          explanation:
+            "Qué tan sencillo es incorporar esta fragancia a distintos momentos, estaciones, contextos y estilos de uso.",
+          rationale:
+            "Broad occasion versatility; viable across most seasons; easy day/night transition; polished profile suitable for work/social use; moderate application risk; slightly less ideal at temperature extremes.",
+        },
+        blindBuy: {
+          reading: "Muy segura a ciegas",
+          position: 0.86,
+          poles: ["Arriesgada", "Segura"],
+          marker: "Muy segura",
+          score: 8.6,
+          verdict: "Muy segura",
+          explanation:
+            "Qué tan segura resulta su compra sin haberla probado, considerando consenso, polarización, versatilidad, accesibilidad del perfil y predictibilidad de desempeño.",
+          rationale:
+            "Very high consensus / mass appeal; low polarization; highly recognizable woody-aromatic DNA; broad versatility; predictable quality/performance; deductions for premium price and for users seeking highly distinctive/non-mainstream profiles.",
+        },
       },
     },
     /**
@@ -490,8 +723,14 @@ const PRESENTATIONS: Record<string, PerfumePresentation> = {
       index: "04",
       eyebrow: "Arquitectura Olfativa",
       title: "",
+      intro: {
+        eyebrow: "Arquitectura Olfativa",
+        stagesLabel: "Salida — Corazón — Fondo",
+      },
       stillLifeSrc:
         "/media/perfumes/bleu-de-chanel-edp/edp/edp-notes-section3.png",
+      stillLifeSplitSrc:
+        "/media/perfumes/bleu-de-chanel-edp/edp/bleu-edp-arquitectura-sintesis.png",
       stillLifeAlt:
         "Naturaleza muerta olfativa de Bleu de Chanel Eau de Parfum",
       sectionBackgroundSrc:
@@ -512,6 +751,11 @@ const PRESENTATIONS: Record<string, PerfumePresentation> = {
           label: "Salida",
           reading: "La apertura cítrica y el frescor que firma Pomelo.",
           traits: "Fresco · Cítrico · Aromático",
+          noteRows: [
+            ["aldehidos", "menta"],
+            ["bergamota", "limon"],
+            ["pomelo", "pimienta-rosa", "coriandro"],
+          ],
           highlights: [
             { cx: 20, cy: 48, rx: 26, ry: 38 },
             { cx: 14, cy: 20, rx: 14, ry: 16 },
@@ -639,6 +883,10 @@ const PRESENTATIONS: Record<string, PerfumePresentation> = {
           label: "Corazón",
           reading: "La tensión especiada que sostiene Jengibre.",
           traits: "Especiado · Seco · Vibrante",
+          noteRows: [
+            ["jengibre", "melon"],
+            ["jazmin", "nuez-moscada"],
+          ],
           highlights: [
             { cx: 78, cy: 42, rx: 20, ry: 22 },
             { cx: 84, cy: 58, rx: 12, ry: 11 },
@@ -718,6 +966,11 @@ const PRESENTATIONS: Record<string, PerfumePresentation> = {
           label: "Fondo",
           reading: "La sombra seca del Incienso sobre maderas y resinas.",
           traits: "Ahumado · Profundo · Elegante",
+          noteRows: [
+            ["incienso", "ambar", "ladano"],
+            ["cedro", "sandalo"],
+            ["pachuli", "amberwood"],
+          ],
           highlights: [
             { cx: 50, cy: 70, rx: 14, ry: 20 },
             { cx: 48, cy: 88, rx: 12, ry: 10 },
@@ -844,6 +1097,7 @@ const PRESENTATIONS: Record<string, PerfumePresentation> = {
       ],
     },
     lineage: {
+      mode: "lineage",
       index: "06",
       eyebrow: "LA LÍNEA",
       title: "La línea Bleu",
@@ -1017,6 +1271,31 @@ export function getArchitecture(
   presentation: PerfumePresentation,
 ): ArchitecturePresentation | undefined {
   return presentation.architecture ?? presentation.pyramid;
+}
+
+/**
+ * Resolve Section 06 presentation.
+ * Prefers `relations`; accepts legacy `lineage` as lineage mode.
+ * Returns null when the chapter should not render.
+ */
+export function resolveRelations(
+  presentation: PerfumePresentation,
+): RelationsPresentation | null {
+  const direct = presentation.relations;
+  if (direct?.entries?.length) return direct;
+  const legacy = presentation.lineage;
+  if (legacy?.entries?.length) {
+    return {
+      mode: legacy.mode ?? "lineage",
+      index: legacy.index,
+      eyebrow: legacy.eyebrow,
+      title: legacy.title,
+      subtitle: legacy.subtitle,
+      maisonHref: legacy.maisonHref,
+      entries: legacy.entries,
+    };
+  }
+  return null;
 }
 
 export function resolvePerfumePresentation(

@@ -90,6 +90,23 @@
   background: var(--atm-bg);
 }
 
+html:has(.perfume-document[data-chapter-layout="split"]) .perfume-hero-scroll {
+  /* Split: one viewport, then the document. No Firma runway. */
+  height: 100svh;
+  min-height: 640px;
+}
+
+html:has(.perfume-document[data-chapter-layout="split"])
+  .perfume-hero__atmosphere {
+  opacity: 1;
+  transform: none;
+}
+
+html:has(.perfume-document[data-chapter-layout="split"])
+  .perfume-hero__doc-plane {
+  display: none;
+}
+
 .perfume-hero {
   position: sticky;
   top: 0;
@@ -1213,5 +1230,730 @@ button.hero-variants__current {
 
   .hero-rail__row dd {
     font-size: 14px;
+  }
+}
+
+/* —— Split Hero: local contrast only. Geometry / type size / hierarchy unchanged. —— */
+html:has(.perfume-document[data-chapter-layout="split"]) .perfume-hero {
+  --split-hero-ink: #f5f2eb;
+  --split-hero-ink-2: rgba(245, 242, 235, 0.76);
+  --split-hero-ink-3: rgba(245, 242, 235, 0.58);
+  --split-hero-rule: rgba(245, 242, 235, 0.28);
+  --split-hero-shadow-1:
+    0 1px 2px rgba(0, 0, 0, 0.28), 0 4px 18px rgba(0, 0, 0, 0.18);
+  --split-hero-shadow-2: 0 1px 8px rgba(0, 0, 0, 0.24);
+  --atm-fg: #f5f2eb;
+  --atm-fg-muted: rgba(245, 242, 235, 0.76);
+  --atm-fg-soft: rgba(245, 242, 235, 0.58);
+}
+
+html:has(.perfume-document[data-chapter-layout="split"])
+  .perfume-hero[data-has-editorial="true"]
+  .perfume-hero__atmosphere
+  img {
+  object-fit: cover;
+  object-position: var(--hero-focus, 50% 48%);
+  width: 100%;
+  height: 100%;
+  image-rendering: auto;
+}
+
+html:has(.perfume-document[data-chapter-layout="split"])
+  .perfume-hero__scrim {
+  /* Kill the global nocturne vignette — contrast is local only. */
+  background: none;
+  opacity: 0;
+}
+
+html:has(.perfume-document[data-chapter-layout="split"])
+  .perfume-hero__identity::before,
+html:has(.perfume-document[data-chapter-layout="split"])
+  .hero-rail::before {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+}
+
+html:has(.perfume-document[data-chapter-layout="split"])
+  .perfume-hero__identity::before {
+  inset: -10% -28% -8% -16%;
+  background: linear-gradient(
+    90deg,
+    rgba(15, 12, 9, 0.14) 0%,
+    rgba(15, 12, 9, 0.06) 55%,
+    rgba(15, 12, 9, 0) 100%
+  );
+}
+
+html:has(.perfume-document[data-chapter-layout="split"])
+  .hero-rail::before {
+  inset: -8% -20% -8% -28%;
+  background: linear-gradient(
+    270deg,
+    rgba(15, 12, 9, 0.16) 0%,
+    rgba(15, 12, 9, 0.07) 50%,
+    rgba(15, 12, 9, 0) 100%
+  );
+}
+
+html:has(.perfume-document[data-chapter-layout="split"])
+  .perfume-hero__identity-inner,
+html:has(.perfume-document[data-chapter-layout="split"])
+  .hero-rail
+  > * {
+  position: relative;
+  z-index: 1;
+}
+
+html:has(.perfume-document[data-chapter-layout="split"])
+  .perfume-hero
+  .perfume-hero__name,
+html:has(.perfume-document[data-chapter-layout="split"])
+  .perfume-hero
+  .perfume-hero__name-line,
+html:has(.perfume-document[data-chapter-layout="split"])
+  .perfume-hero
+  .perfume-hero__brand-fallback,
+html:has(.perfume-document[data-chapter-layout="split"])
+  .perfume-hero
+  .perfumer-signature__name {
+  color: #f5f2eb;
+  text-shadow: var(--split-hero-shadow-1);
+}
+
+html:has(.perfume-document[data-chapter-layout="split"])
+  .perfume-hero
+  .editorial-sentence,
+html:has(.perfume-document[data-chapter-layout="split"])
+  .perfume-hero
+  .hero-rail__row
+  dd,
+html:has(.perfume-document[data-chapter-layout="split"])
+  .perfume-hero
+  .hero-variants--rail
+  .hero-variants__current,
+html:has(.perfume-document[data-chapter-layout="split"])
+  .perfume-hero
+  .perfumer-signature__meta {
+  color: rgba(245, 242, 235, 0.76);
+  text-shadow: var(--split-hero-shadow-2);
+}
+
+html:has(.perfume-document[data-chapter-layout="split"])
+  .perfume-hero
+  .perfume-hero__catalog,
+html:has(.perfume-document[data-chapter-layout="split"])
+  .perfume-hero
+  .perfume-hero__tagline,
+html:has(.perfume-document[data-chapter-layout="split"])
+  .perfume-hero
+  .perfume-hero__scroll-cue,
+html:has(.perfume-document[data-chapter-layout="split"])
+  .perfume-hero
+  .hero-rail__row
+  dt,
+html:has(.perfume-document[data-chapter-layout="split"])
+  .perfume-hero
+  .hero-variants__label,
+html:has(.perfume-document[data-chapter-layout="split"])
+  .perfume-hero
+  .hero-variants--rail
+  .hero-variants__link,
+html:has(.perfume-document[data-chapter-layout="split"])
+  .perfume-hero
+  .hero-variants--rail
+  .hero-variants__inactive,
+html:has(.perfume-document[data-chapter-layout="split"])
+  .perfume-hero
+  .perfumer-signature__credit {
+  color: rgba(245, 242, 235, 0.58);
+  text-shadow: var(--split-hero-shadow-2);
+}
+
+html:has(.perfume-document[data-chapter-layout="split"])
+  .perfume-hero
+  .hero-rail__row,
+html:has(.perfume-document[data-chapter-layout="split"])
+  .perfume-hero
+  .hero-variants--rail {
+  border-color: rgba(245, 242, 235, 0.28);
+}
+
+html:has(.perfume-document[data-chapter-layout="split"])
+  .perfume-hero
+  .hero-rail__row {
+  border-top-color: rgba(245, 242, 235, 0.28);
+}
+
+html:has(.perfume-document[data-chapter-layout="split"])
+  .perfume-hero
+  .hero-variants--rail
+  .hero-variants__current {
+  border-bottom-color: rgba(245, 242, 235, 0.28);
+}
+
+html:has(.perfume-document[data-chapter-layout="split"])
+  .perfume-hero
+  .hero-variants--rail
+  .hero-variants__link:hover {
+  color: rgba(245, 242, 235, 0.76);
+}
+
+html:has(.perfume-document[data-chapter-layout="split"])
+  .perfume-hero
+  .perfumer-signature__portrait {
+  box-shadow: 0 0 0 1px rgba(245, 242, 235, 0.28);
+}
+
+/* Split header: thin editorial bar, same field as the page. */
+html:has(.perfume-document[data-chapter-layout="split"])
+  .library-shell--perfume
+  .library-header {
+  height: var(--split-header-h, 76px);
+  background: var(--split-page-bg, #f7f6f3);
+  background-image: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  mix-blend-mode: normal;
+  color: var(--ink, #151515);
+  border-bottom: 1px solid var(--hairline, rgba(20, 20, 20, 0.12));
+}
+
+html:has(.perfume-document[data-chapter-layout="split"])
+  .library-shell--perfume
+  .library-header--identity
+  .library-header__discover {
+  background-color: var(--split-page-bg, #f7f6f3);
+}
+
+html:has(.perfume-document[data-chapter-layout="split"])
+  .library-shell--perfume
+  .library-mobile-panel {
+  background: var(--split-page-bg, #f7f6f3);
+  background-image: none;
+  color: var(--ink, #151515);
+}
+
+html:has(.perfume-document[data-chapter-layout="split"])
+  .library-shell--perfume
+  .library-brand--mark {
+  color: var(--ink, #151515);
+}
+
+html:has(.perfume-document[data-chapter-layout="split"])
+  .library-shell--perfume
+  .library-tool {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  opacity: 0.72;
+}
+
+html:has(.perfume-document[data-chapter-layout="split"])
+  .library-shell--perfume
+  .library-tool:hover,
+html:has(.perfume-document[data-chapter-layout="split"])
+  .library-shell--perfume
+  .library-tool:focus-visible {
+  opacity: 1;
+}
+
+/* —— Split Hero: product portrait / editorial archive —— */
+.perfume-hero.perfume-hero--portrait {
+  --portrait-field: var(--split-page-bg, #f7f6f3);
+  --portrait-ink: var(--ink, #151515);
+  --portrait-ink-2: #3a3a37;
+  --portrait-ink-3: rgba(21, 21, 21, 0.62);
+  --split-navy: var(--bleu-accent, #122131);
+  --atm-fg: var(--portrait-ink);
+  --atm-fg-muted: var(--portrait-ink-2);
+  --atm-fg-soft: var(--portrait-ink-3);
+  display: flex;
+  flex-direction: column;
+  background: var(--portrait-field);
+  color: var(--portrait-ink);
+  isolation: isolate;
+  padding-top: var(--split-header-h, 76px);
+  box-sizing: border-box;
+  overflow: visible;
+}
+
+.perfume-hero--portrait::after {
+  content: none;
+}
+
+.hero-portrait {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 22%) minmax(0, 56%) minmax(0, 22%);
+  grid-template-areas: "left product right";
+  align-items: stretch;
+  min-height: 0;
+  width: 100%;
+  max-width: var(--editorial-max, 1920px);
+  margin-inline: auto;
+  padding: 0 var(--page-gutter, clamp(24px, 3vw, 56px));
+  box-sizing: border-box;
+  column-gap: 0;
+  --portrait-rail-top: calc(
+    (100svh - var(--split-header-h, 76px) - 23.125rem) / 2
+  );
+}
+
+.hero-portrait__left,
+.hero-portrait__right {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+.hero-portrait__left {
+  grid-area: left;
+  padding: max(1.75rem, calc(var(--portrait-rail-top) - 1.75rem)) 1.35rem 2rem 0;
+  gap: 1.95rem;
+}
+
+.hero-portrait__right {
+  grid-area: right;
+  padding: var(--portrait-rail-top) 0 0 1.35rem;
+  gap: 2.4rem;
+}
+
+.hero-portrait__identity {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+}
+
+.hero-portrait__maison {
+  margin: 0 0 0.75rem;
+  font-family: var(--split-metric-sans, "Helvetica Neue", Helvetica, Arial, sans-serif);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--portrait-ink, #151515);
+  line-height: 1.2;
+}
+
+.hero-portrait__edition {
+  margin-top: 0;
+}
+
+.hero-portrait__eyebrow {
+  margin: 0;
+  font-family: var(--font-manrope), Manrope, sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--portrait-ink-3);
+  line-height: 1.4;
+}
+
+.hero-portrait__eyebrow::after {
+  content: "";
+  display: block;
+  width: 1.15rem;
+  height: 1px;
+  margin-top: 0.5rem;
+  background: var(--split-navy, #122131);
+}
+
+.hero-portrait__title {
+  display: flex;
+  flex-direction: column;
+  margin: 1.25rem 0 1.2rem;
+  font-family: var(--split-metric-sans, "Helvetica Neue", Helvetica, Arial, sans-serif);
+  font-weight: 500;
+  font-size: clamp(32px, 3.05vw, 46px);
+  line-height: 1.04;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--portrait-ink);
+  max-width: 9ch;
+}
+
+.hero-portrait__title-line {
+  display: block;
+  text-indent: -0.08em;
+}
+
+.hero-portrait__concentration {
+  margin: 0 0 0.95rem;
+  font-family: var(--font-manrope), Manrope, sans-serif;
+  font-size: 14px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--portrait-ink);
+}
+
+.hero-portrait__family {
+  margin: 0;
+  font-family: var(--font-manrope), Manrope, sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 400;
+  color: var(--portrait-ink-3);
+}
+
+.hero-portrait__lede {
+  margin: 0;
+  max-width: 28ch;
+  font-family: var(--font-manrope), Manrope, sans-serif;
+  font-size: 15px;
+  line-height: 1.62;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  color: var(--portrait-ink-2);
+}
+
+.hero-portrait__reading {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.hero-portrait__left .rating-summary {
+  margin-top: 1.35rem;
+}
+
+.hero-portrait__left .perfume-actions--editorial {
+  margin-top: 1.25rem;
+}
+
+.rating-summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.5rem;
+  margin: 0;
+  color: #9a7b4e;
+  font-family: var(--split-metric-sans, "Helvetica Neue", Helvetica, Arial, sans-serif);
+}
+
+.rating-summary__stars {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.12rem;
+}
+
+.rating-summary__star {
+  display: block;
+}
+
+.rating-summary__score {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--portrait-ink-2, #3a3a37);
+}
+
+.rating-summary__dot {
+  color: var(--portrait-ink-3, rgba(21, 21, 21, 0.42));
+  font-size: 11px;
+}
+
+.rating-summary__count,
+.rating-summary__write {
+  appearance: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+}
+
+.rating-summary__count {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--portrait-ink-2, #3a3a37);
+  text-decoration: underline;
+  text-underline-offset: 0.22em;
+  text-decoration-thickness: 1px;
+}
+
+.rating-summary--empty {
+  color: color-mix(in srgb, #9a7b4e 40%, transparent);
+}
+
+.rating-summary--empty .rating-summary__star {
+  opacity: 0.85;
+}
+
+.rating-summary--empty .rating-summary__score,
+.rating-summary--empty .rating-summary__dot,
+.rating-summary--empty .rating-summary__count {
+  color: var(--portrait-ink-3, rgba(21, 21, 21, 0.4));
+}
+
+.rating-summary__count:hover,
+.rating-summary__count:focus-visible {
+  color: var(--portrait-ink, #151515);
+}
+
+.rating-summary__count:focus-visible {
+  outline: 1px solid currentColor;
+  outline-offset: 3px;
+}
+
+.hero-portrait__product {
+  grid-area: product;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  min-width: 0;
+  min-height: 0;
+  overflow: visible;
+  will-change: transform;
+}
+
+.hero-portrait__product::before,
+.hero-portrait__product::after {
+  content: "";
+  position: absolute;
+  top: var(--portrait-rail-top);
+  bottom: calc(var(--portrait-rail-top) - 0.4rem);
+  width: 1px;
+  background: var(--hairline, rgba(20, 20, 20, 0.1));
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.hero-portrait__product::before {
+  left: 0;
+}
+
+.hero-portrait__product::after {
+  right: 0;
+}
+
+.hero-portrait__object {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 94%;
+  max-height: 98%;
+  max-width: 100%;
+}
+
+.hero-portrait__bottle {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  object-position: center center;
+  pointer-events: none;
+  user-select: none;
+}
+
+.perfume-hero--portrait .hero-variants--rail {
+  margin: 0;
+  padding-bottom: 0;
+  border-bottom: 0;
+  gap: 0.9rem;
+}
+
+.perfume-hero--portrait .hero-variants__label {
+  margin-bottom: 0.55rem;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  font-weight: 500;
+  color: var(--portrait-ink-2);
+}
+
+.perfume-hero--portrait .hero-variants__label::after {
+  content: "";
+  display: block;
+  width: 1.15rem;
+  height: 1px;
+  margin-top: 0.45rem;
+  background: var(--split-navy, #122131);
+}
+
+.perfume-hero--portrait .hero-variants--rail .hero-variants__list {
+  gap: 0.62rem;
+}
+
+.perfume-hero--portrait .hero-variants--rail .hero-variants__current,
+.perfume-hero--portrait .hero-variants--rail .hero-variants__link,
+.perfume-hero--portrait .hero-variants--rail .hero-variants__inactive {
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-shadow: none;
+}
+
+.perfume-hero--portrait .hero-variants--rail .hero-variants__current {
+  color: var(--portrait-ink);
+  font-weight: 600;
+  border-bottom-color: var(--split-navy, #122131);
+}
+
+.perfume-hero--portrait .hero-variants--rail .hero-variants__link,
+.perfume-hero--portrait .hero-variants--rail .hero-variants__inactive {
+  color: var(--portrait-ink-3);
+  font-weight: 500;
+}
+
+.perfume-hero--portrait .hero-variants--rail .hero-variants__link:hover {
+  color: var(--portrait-ink);
+}
+
+html:has(.perfume-document[data-chapter-layout="split"])
+  .perfume-hero--portrait
+  .hero-variants--rail
+  .hero-variants__current {
+  color: #171717;
+  text-shadow: none;
+  border-bottom-color: var(--split-navy, #122131);
+}
+
+html:has(.perfume-document[data-chapter-layout="split"])
+  .perfume-hero--portrait
+  .hero-variants--rail
+  .hero-variants__link,
+html:has(.perfume-document[data-chapter-layout="split"])
+  .perfume-hero--portrait
+  .hero-variants--rail
+  .hero-variants__inactive {
+  color: #5c5c57;
+  text-shadow: none;
+}
+
+html:has(.perfume-document[data-chapter-layout="split"])
+  .perfume-hero--portrait
+  .hero-variants__label {
+  color: #5c5c57;
+}
+
+.hero-portrait__meta {
+  margin: 0;
+}
+
+.hero-portrait__field {
+  margin: 0 0 1.05rem;
+}
+
+.hero-portrait__field:last-child {
+  margin-bottom: 0;
+}
+
+.hero-portrait__field dt {
+  margin: 0 0 0.28rem;
+  font-family: var(--font-manrope), Manrope, sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--portrait-ink-3);
+}
+
+.hero-portrait__field dd {
+  margin: 0;
+  font-family: var(--font-playfair), "Playfair Display", serif;
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--portrait-ink);
+}
+
+.hero-portrait__field--metric dd {
+  font-family: var(--font-manrope), Manrope, sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 1179px) {
+  .hero-portrait__title {
+    font-size: clamp(28px, 2.9vw, 40px);
+  }
+}
+
+@media (max-width: 900px) {
+  html:has(.perfume-document[data-chapter-layout="split"])
+    .perfume-hero-scroll {
+    height: auto;
+    min-height: 0;
+  }
+
+  .perfume-hero--portrait {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .hero-portrait {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "identity"
+      "product"
+      "right"
+      "lede";
+    align-items: stretch;
+    row-gap: 1.5rem;
+    column-gap: 0;
+    padding: 0.35rem 1.35rem 2.75rem;
+  }
+
+  .hero-portrait__left {
+    display: contents;
+  }
+
+  .hero-portrait__identity {
+    grid-area: identity;
+    padding-top: 0.4rem;
+  }
+
+  .hero-portrait__reading {
+    grid-area: lede;
+  }
+
+  .hero-portrait__lede {
+    max-width: 42ch;
+  }
+
+  .hero-portrait__product {
+    grid-area: product;
+    min-height: 48svh;
+  }
+
+  .hero-portrait__product::before,
+  .hero-portrait__product::after {
+    top: 10%;
+    bottom: 10%;
+  }
+
+  .hero-portrait__object {
+    height: 48svh;
+    max-height: 54svh;
+    max-width: 72vw;
+  }
+
+  .hero-portrait__right {
+    grid-area: right;
+    padding: 0.4rem 0 0.2rem;
+    gap: 1.8rem;
+  }
+
+  .hero-portrait__title {
+    max-width: none;
+    font-size: clamp(28px, 8.2vw, 40px);
   }
 }

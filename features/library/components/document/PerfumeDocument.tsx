@@ -4,8 +4,10 @@ import type {
   PerfumePresentation,
   SignatureNote,
 } from "../../lib/presentation";
+import { relatedEntitiesFrom, resolveRelations } from "../../lib/presentation";
 import { AffinitiesSection } from "./AffinitiesSection";
-import { LineageSection } from "./LineageSection";
+import { ExploreBibliothequeBanner } from "./PerfumeExploreClose";
+import { ReviewsSection } from "./ReviewsSection";
 import { Moodboard } from "./Moodboard";
 import {
   ArchitectureCinematicHandoff,
@@ -15,7 +17,10 @@ import {
 import { OlfactiveIdentity } from "./OlfactiveIdentity";
 import { OlfactoryArchitecture } from "./OlfactoryArchitecture";
 import { PerformanceSection } from "./PerformanceSection";
-import { PerfumeActions } from "./PerfumeActions";
+import { SignatureArchitectureChapter } from "./SignatureArchitectureChapter";
+import { SplitEditorialIntro } from "./SplitEditorialIntro";
+import { SplitChapterCue } from "./SplitChapterCue";
+import { PerfumeRelationsSection } from "./PerfumeRelationsSection";
 
 type PerfumeDocumentProps = {
   presentation: PerfumePresentation;
@@ -37,6 +42,14 @@ type PerfumeDocumentProps = {
     architecture?: ArchitecturePresentation;
     signatureNotes?: SignatureNote[];
   };
+  /** Prototype A flag — default current V1.1. */
+  motionMode?: "current" | "continuous";
+  /** Prototype split S2/S3 chapter — default current sequential. */
+  chapterLayout?: "current" | "split";
+  /** Temporary Section 4 experiments. Omit = current production split. */
+  performanceVariant?: "A" | "B" | "C" | "C1" | "C3" | null;
+  /** Split Firma motion. Default = approved scroll-linked assembly. */
+  firmaMotion?: "linked" | "timed";
 };
 
 /**
@@ -47,6 +60,10 @@ export function PerfumeDocument({
   presentation,
   activeSignatureChapter,
   activeArchitecture,
+  motionMode = "current",
+  chapterLayout = "current",
+  performanceVariant = null,
+  firmaMotion = "linked",
 }: PerfumeDocumentProps) {
   /* When activeSignatureChapter is provided, never fall back to page record */
   const notesChapter = activeSignatureChapter
@@ -71,17 +88,44 @@ export function PerfumeDocument({
     currentVariant?.concentration ??
     presentation.variants?.find((v) => v.href)?.concentration;
 
+  const relations = resolveRelations(presentation);
+
   return (
-    <div className="perfume-document">
+    <div
+      className="perfume-document"
+      data-motion={motionMode}
+      data-chapter-layout={chapterLayout}
+    >
       <div className="perfume-document__sheet">
-        <OlfactiveIdentity
-          signatureNotes={signatureNotes}
-          chapter={notesChapter}
-        />
-        <OlfactoryArchitecture
-          architecture={architecture ?? null}
-          signatureNotes={architectureSignatures}
-        />
+        {chapterLayout === "split" ? (
+          <>
+            <SplitEditorialIntro
+              notesChapter={notesChapter}
+              firmaMotion={firmaMotion}
+            />
+            <SplitChapterCue architecture={architecture ?? null} />
+            <SignatureArchitectureChapter
+              signatureNotes={signatureNotes}
+              notesChapter={notesChapter}
+              architecture={architecture ?? null}
+              architectureSignatures={architectureSignatures}
+              motionMode={motionMode}
+            />
+          </>
+        ) : (
+          <>
+            <OlfactiveIdentity
+              signatureNotes={signatureNotes}
+              chapter={notesChapter}
+            />
+            <div className="perfume-document__page-seam" aria-hidden="true" />
+            <OlfactoryArchitecture
+              architecture={architecture ?? null}
+              signatureNotes={architectureSignatures}
+              motionMode={motionMode}
+            />
+          </>
+        )}
         {LEGACY_ARCH_SMOKE_BRIDGE && smokeFilmSrc ? (
           <ArchitectureCinematicHandoff
             smokeFilmSrc={smokeFilmSrc}
@@ -93,14 +137,21 @@ export function PerfumeDocument({
         <PerformanceSection
           performance={presentation.performance}
           smokeFilmSrc={smokeFilmSrc}
+          layout={chapterLayout}
+          variant={performanceVariant}
         />
-        <LineageSection lineage={presentation.lineage} />
-        <AffinitiesSection affinities={presentation.affinities} />
-        <PerfumeActions
+        <PerfumeRelationsSection
+          relations={relations}
+          guidance={presentation.performance?.criterio}
           perfumeName={presentation.heroName}
           concentration={concentration}
           commerce={presentation.commerce}
+          relatedEntities={relatedEntitiesFrom(presentation)}
+          layout={chapterLayout}
         />
+        <AffinitiesSection affinities={presentation.affinities} />
+        <ReviewsSection reviews={presentation.reviews} />
+        <ExploreBibliothequeBanner />
       </div>
     </div>
   );

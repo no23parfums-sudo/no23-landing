@@ -4,6 +4,8 @@
 @import "./site.css";
 @import "./perfume-hero.css";
 @import "./perfume-document.css";
+@import "./performance-variants.css";
+@import "./performance-sheet.css";
 
 @theme inline {
   --color-ink: var(--ink);

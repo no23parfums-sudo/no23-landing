@@ -1,6 +1,11 @@
 "use client";
 
-import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import { useReducedMotion } from "motion/react";
 import type {
   ContinuumReading,
@@ -8,16 +13,26 @@ import type {
   SpectrumReading,
 } from "../../lib/presentation";
 import {
+  formatContinuumMarker,
+  formatHoursRange,
+} from "../../lib/presentation";
+import {
   createMatterField,
   type MatterMode,
 } from "./performanceMatter";
 import { EditorialNo23Note } from "./EditorialNo23Note";
+import { PerformanceVariantSwitch } from "./performance/PerformanceVariantSwitch";
 import { setupPerformanceRuntime } from "./performanceRuntime";
+
 
 type PerformanceSectionProps = {
   performance?: PerformancePresentation;
   /** Cinematic smoke film — Performance opening (not a separate chapter). */
   smokeFilmSrc?: string;
+  /** Prototype split — static ivory editorial, no cinematic runtime. */
+  layout?: "current" | "split";
+  /** Temporary A/B/C experiments. Null keeps current SplitPerformance. */
+  variant?: "A" | "B" | "C" | "C1" | "C3" | null;
 };
 
 type ContinuumKey = "longevity" | "projection" | "sillage" | "versatility";
@@ -43,10 +58,13 @@ const CONTINUUM_META: Record<
 export function PerformanceSection({
   performance,
   smokeFilmSrc,
+  layout = "current",
+  variant = null,
 }: PerformanceSectionProps) {
   const reduceMotion = useReducedMotion();
   const sectionRef = useRef<HTMLElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const isSplit = layout === "split";
 
   const longevity = performance?.longevity;
   const projection = performance?.projection;
@@ -56,6 +74,7 @@ export function PerformanceSection({
   const occasions = performance?.occasions;
 
   useEffect(() => {
+    if (isSplit) return;
     const section = sectionRef.current;
     const canvas = canvasRef.current;
     if (!section || !canvas || !longevity) return;
@@ -186,9 +205,20 @@ export function PerformanceSection({
     seasons,
     occasions,
     reduceMotion,
+    isSplit,
   ]);
 
   if (!longevity?.reading) return null;
+
+  if (isSplit) {
+    return (
+      <PerformanceVariantSwitch
+        performance={performance}
+        smokeFilmSrc={smokeFilmSrc}
+        variant={variant}
+      />
+    );
+  }
 
   return (
     <section
@@ -213,7 +243,7 @@ export function PerformanceSection({
               muted
               loop
               playsInline
-              preload="metadata"
+              preload="auto"
               tabIndex={-1}
             />
             <div className="performance-section__smoke-veil" />
@@ -298,6 +328,7 @@ export function PerformanceSection({
   );
 }
 
+
 function spectrumWeight(
   reading: SpectrumReading,
   index: number,
@@ -327,7 +358,7 @@ function ContinuumExhibit({
 }) {
   const meta = CONTINUUM_META[metric];
   const poles = reading.poles ?? meta.defaults;
-  const marker = reading.marker ?? reading.reading;
+  const marker = formatContinuumMarker(reading, metric === "longevity");
   const target = Math.min(1, Math.max(0, reading.position ?? 0.7));
 
   return (
@@ -345,6 +376,7 @@ function ContinuumExhibit({
         poles={poles}
         marker={marker}
         target={target}
+        compound={metric === "longevity" && Boolean(reading.hoursRange)}
         ariaLabel={`${meta.index}: ${marker}. De ${poles[0]} a ${poles[1]}.`}
       />
     </div>
@@ -414,12 +446,14 @@ function PerformanceRail({
   target,
   ariaLabel,
   settled = false,
+  compound = false,
 }: {
   poles: [string, string];
   marker: string;
   target: number;
   ariaLabel: string;
   settled?: boolean;
+  compound?: boolean;
 }) {
   const fillExpr = settled
     ? String(target)
@@ -433,6 +467,7 @@ function PerformanceRail({
     <div
       className="performance-rail"
       data-settled={settled ? "true" : "false"}
+      data-compound={compound ? "true" : "false"}
       role="img"
       aria-label={ariaLabel}
     >
@@ -470,22 +505,29 @@ function PerformanceOverview({
   const cells: {
     id: string;
     label: string;
+    hours?: string | null;
     reading?: string;
     body: ReactNode;
   }[] = [];
 
   if (performance.longevity) {
     const r = performance.longevity;
+    const hours = formatHoursRange(r.hoursRange);
     cells.push({
       id: "longevity",
       label: "01 Longevidad",
+      hours,
       reading: r.reading,
       body: (
         <PerformanceRail
           poles={r.poles ?? ["Corta", "Larga"]}
-          marker={r.marker ?? r.reading}
+          marker={formatContinuumMarker(r, false)}
           target={r.position ?? 0.7}
-          ariaLabel={r.reading}
+          ariaLabel={
+            hours
+              ? `${r.reading}. ${formatContinuumMarker(r, true)}`
+              : r.reading
+          }
           settled
         />
       ),
@@ -591,12 +633,31 @@ function PerformanceOverview({
             data-metric={cell.id}
             tabIndex={0}
           >
-            <p className="performance-overview__label">{cell.label}</p>
+            <p className="performance-overview__label">
+              {cell.label}
+              {cell.hours ? (
+                <span className="performance-overview__hours">{cell.hours}</span>
+              ) : null}
+            </p>
             <p className="performance-overview__reading">{cell.reading}</p>
             {cell.body}
           </li>
         ))}
       </ul>
+      {performance.lectura ? (
+        <div className="performance-overview__coda">
+          <PerformanceLectura text={performance.lectura} />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function PerformanceLectura({ text }: { text: string }) {
+  return (
+    <div className="performance-lectura">
+      <p className="performance-lectura__eyebrow">Lectura NO.23</p>
+      <p className="performance-lectura__body">{text}</p>
     </div>
   );
 }

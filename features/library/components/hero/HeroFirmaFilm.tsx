@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { isForwardFilmReady, hasReachedSignatureNotes } from "../../lib/discoveryState";
 
 type HeroFirmaFilmProps = {
   src: string;
@@ -66,6 +67,7 @@ export function HeroFirmaFilm({ src }: HeroFirmaFilmProps) {
     let needsPark = false;
     let wasVisible = false;
     let raf = 0;
+    let lastFirmaProgress = 0;
 
     const applyVisual = (opacity: number) => {
       const o = clamp01(opacity);
@@ -151,6 +153,8 @@ export function HeroFirmaFilm({ src }: HeroFirmaFilmProps) {
       const shell = document.querySelector<HTMLElement>("[data-perfume-shell]");
       const firmaProgress = readFirmaProgress(shell);
       const photoFade = readPhotoFade(shell);
+      const reversing = firmaProgress < lastFirmaProgress - 0.002;
+      lastFirmaProgress = firmaProgress;
 
       /*
        * Use the shell media token only — do not blank on document phase.
@@ -158,6 +162,11 @@ export function HeroFirmaFilm({ src }: HeroFirmaFilmProps) {
        */
       let opacity = readFilmOpacity(shell);
       if (!frameReady) opacity = 0;
+      const suppressFilm =
+        hasReachedSignatureNotes() &&
+        !isForwardFilmReady() &&
+        opacity < 0.5;
+      if (suppressFilm) opacity = 0;
 
       applyVisual(opacity);
 
@@ -169,7 +178,11 @@ export function HeroFirmaFilm({ src }: HeroFirmaFilmProps) {
         needsPark = true;
       }
 
-      if (!visuallyHidden && firmaProgress >= PLAY_AT) {
+      if (
+        !visuallyHidden &&
+        firmaProgress >= PLAY_AT &&
+        !suppressFilm
+      ) {
         tryPlayFromStart();
       } else if (
         playLatched &&
@@ -183,7 +196,13 @@ export function HeroFirmaFilm({ src }: HeroFirmaFilmProps) {
         wasVisible = false;
         playLatched = false;
         if (!video.paused) video.pause();
-        parkAtZero();
+        /*
+         * Reverse-only: keep the last decoded frame while Hero static
+         * crossfades underneath. Seeking to 0 caused the micro-freeze.
+         * Forward hide into Notes still parks for a clean later replay.
+         */
+        if (!reversing) parkAtZero();
+        else needsPark = false;
       }
     };
 
