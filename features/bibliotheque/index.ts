@@ -1,0 +1,1 @@
+export { BibliothequePage } from "./BibliothequePage";

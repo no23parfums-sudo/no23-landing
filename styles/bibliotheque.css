@@ -1,0 +1,267 @@
+/* Bibliothèque source port (bibliotheque-enchantee).
+   All tokens and utilities are scoped to `.be` so they cannot leak
+   into the approved perfume Master Template. */
+
+html:has(.be),
+html:has(.be) body {
+  background-color: oklch(0.155 0.014 155);
+  /* clip, not hidden: site.css overflow-x:hidden computes overflow-y:auto on
+     body, which becomes a false scrollport and freezes Motion useScroll. */
+  overflow-x: clip;
+}
+
+html:has(.be) body {
+  overflow-y: visible;
+}
+
+html:has(.be)::-webkit-scrollbar,
+html:has(.be) body::-webkit-scrollbar {
+  width: 0;
+}
+
+.be {
+  --be-background: oklch(0.155 0.014 155);
+  --be-foreground: oklch(0.918 0.021 84);
+  --be-card: oklch(0.192 0.017 157);
+  --be-primary: oklch(0.79 0.108 82);
+  --be-muted: oklch(0.235 0.02 157);
+  --be-muted-foreground: color-mix(in oklab, var(--be-foreground) 52%, transparent);
+  --be-border: oklch(0.918 0.021 84 / 14%);
+  --be-gold: oklch(0.79 0.108 82);
+  --be-gold-dim: oklch(0.62 0.075 82);
+  --be-ink: oklch(0.115 0.012 155);
+  --be-display: "Cormorant Garamond", Georgia, serif;
+  --be-sans: var(--font-manrope), Manrope, system-ui, sans-serif;
+  --be-pad: var(--pad);
+  --be-gradient-veil: linear-gradient(
+    to bottom,
+    color-mix(in oklab, var(--be-ink) 92%, transparent),
+    color-mix(in oklab, var(--be-ink) 30%, transparent) 45%,
+    color-mix(in oklab, var(--be-ink) 96%, transparent)
+  );
+  --be-gradient-gold: linear-gradient(
+    100deg,
+    var(--be-gold-dim),
+    var(--be-gold) 45%,
+    oklch(0.94 0.06 88) 55%,
+    var(--be-gold-dim)
+  );
+  --be-shadow-vitrine: 0 40px 120px -40px oklch(0 0 0 / 0.85);
+  --be-ease-silk: cubic-bezier(0.16, 1, 0.3, 1);
+  --color-background: var(--be-background);
+  --color-foreground: var(--be-foreground);
+  --color-primary: var(--be-primary);
+  --color-card: var(--be-card);
+  --color-muted-foreground: var(--be-muted-foreground);
+  --color-border: var(--be-border);
+  --background: var(--be-background);
+  --foreground: var(--be-foreground);
+  --primary: var(--be-primary);
+  --card: var(--be-card);
+  --muted-foreground: var(--be-muted-foreground);
+  --border: var(--be-border);
+  --gold: var(--be-gold);
+  --ink: var(--be-ink);
+  --shadow-vitrine: var(--be-shadow-vitrine);
+  --ease-silk: var(--be-ease-silk);
+  --font-display: var(--be-display);
+  min-height: 100vh;
+  background-color: var(--be-background);
+  color: var(--be-foreground);
+  font-family: var(--be-sans), system-ui, sans-serif;
+  font-weight: 300;
+  -webkit-font-smoothing: antialiased;
+}
+
+.be ::selection {
+  background: color-mix(in oklab, var(--be-gold) 35%, transparent);
+  color: var(--be-foreground);
+}
+
+.be .bg-background {
+  background-color: var(--be-background);
+}
+
+.be .bg-card {
+  background-color: var(--be-card);
+}
+
+.be .text-foreground {
+  color: var(--be-foreground);
+}
+
+.be .text-muted-foreground {
+  color: var(--be-muted-foreground);
+}
+
+.be .text-primary {
+  color: var(--be-primary);
+}
+
+.be .text-primary\/80 {
+  color: color-mix(in oklab, var(--be-primary) 80%, transparent);
+}
+
+.be .bg-primary\/70 {
+  background-color: color-mix(in oklab, var(--be-primary) 70%, transparent);
+}
+
+.be .bg-primary\/60 {
+  background-color: color-mix(in oklab, var(--be-primary) 60%, transparent);
+}
+
+.be .border-border {
+  border-color: var(--be-border);
+}
+
+.be .border-primary\/15 {
+  border-color: color-mix(in oklab, var(--be-primary) 15%, transparent);
+}
+
+.be .border-primary\/20 {
+  border-color: color-mix(in oklab, var(--be-primary) 20%, transparent);
+}
+
+.be .border-primary\/30 {
+  border-color: color-mix(in oklab, var(--be-primary) 30%, transparent);
+}
+
+.be .hover\:border-primary\/40:hover,
+.be .group:hover .group-hover\:border-primary\/40 {
+  border-color: color-mix(in oklab, var(--be-primary) 40%, transparent);
+}
+
+.be .hover\:border-primary\/70:hover {
+  border-color: color-mix(in oklab, var(--be-primary) 70%, transparent);
+}
+
+.be .hover\:text-primary:hover,
+.be .group:hover .group-hover\:text-primary {
+  color: var(--be-primary);
+}
+
+.be .be-gold-rule {
+  background-image: linear-gradient(
+    to right,
+    transparent,
+    color-mix(in oklab, var(--be-primary) 80%, transparent),
+    transparent
+  );
+}
+
+.be .font-display {
+  font-family: var(--be-display);
+  font-weight: 300;
+}
+
+.be .eyebrow {
+  font-family: var(--be-sans);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  color: var(--be-muted-foreground);
+}
+
+.be .be-gutter {
+  padding-left: var(--pad);
+  padding-right: var(--pad);
+}
+
+.be .be-registre-row {
+  display: grid;
+  grid-template-columns: 7.5rem minmax(0, 1fr) auto;
+  align-items: baseline;
+  column-gap: 1.5rem;
+  padding-block: 2rem;
+  border-bottom: 1px solid var(--be-border);
+  transition: border-color 0.7s;
+}
+
+@media (min-width: 768px) {
+  .be .be-registre-row {
+    grid-template-columns: 9.5rem minmax(0, 1fr) auto;
+    column-gap: 2.5rem;
+  }
+}
+
+.be .be-registre-row:hover {
+  border-bottom-color: color-mix(in oklab, var(--be-primary) 40%, transparent);
+}
+
+.be .gold-text {
+  background: var(--be-gradient-gold);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.be .hairline {
+  height: 1px;
+  width: 100%;
+  background: color-mix(in oklab, var(--be-foreground) 16%, transparent);
+}
+
+.be .grain {
+  position: relative;
+}
+
+.be .grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.5;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
+}
+
+.be .veil {
+  background-image: var(--be-gradient-veil);
+}
+
+.be .link-underline {
+  position: relative;
+}
+
+.be .link-underline::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  height: 1px;
+  width: 100%;
+  transform: scaleX(0);
+  transform-origin: right;
+  background: color-mix(in oklab, var(--be-gold) 70%, transparent);
+  transition: transform 0.6s var(--be-ease-silk);
+}
+
+.be .link-underline:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+@keyframes be-candle {
+  0%,
+  100% {
+    opacity: 0.75;
+  }
+  40% {
+    opacity: 0.95;
+  }
+  70% {
+    opacity: 0.62;
+  }
+}
+
+.be .candle-flicker {
+  animation: be-candle 6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .be .candle-flicker {
+    animation: none;
+  }
+}
