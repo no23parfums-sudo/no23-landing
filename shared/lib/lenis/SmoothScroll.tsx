@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 import Lenis from "lenis";
 import "lenis/dist/lenis.css";
 import gsap from "gsap";
@@ -12,6 +13,10 @@ import {
   readLenisToggle,
   setLenisSessionOverride,
 } from "./config";
+
+function pageOwnsLenis(pathname: string) {
+  return pathname === "/bibliotheque" || pathname.startsWith("/bibliotheque/");
+}
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -31,7 +36,18 @@ declare global {
  * Renders nothing. Safe to leave mounted when Lenis is toggled off.
  */
 export function SmoothScroll() {
+  const pathname = usePathname();
+  const ownedByPage = pageOwnsLenis(pathname);
+
   useEffect(() => {
+    if (ownedByPage) {
+      document.documentElement.dataset.lenis = "off";
+      document.documentElement.dataset.lenisOwner = "page";
+      return;
+    }
+
+    delete document.documentElement.dataset.lenisOwner;
+
     let lenis: Lenis | undefined;
     let reducedMq: MediaQueryList | undefined;
 
@@ -96,7 +112,7 @@ export function SmoothScroll() {
       delete window.__NO23_LENIS_DEBUG;
       stop();
     };
-  }, []);
+  }, [ownedByPage]);
 
   return null;
 }
